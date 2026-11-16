@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Akagi — Fan Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <section id="screen-title" class="screen"></section>
+    <section id="screen-select" class="screen"></section>
+    <section id="screen-vn" class="screen"></section>
+    <section id="screen-battle" class="screen"></section>
+  </div>
+
+  <!-- mahjong engine (also runs under Node for tests) -->
+  <script src="js/mahjong/tiles.js"></script>
+  <script src="js/mahjong/hand.js"></script>
+  <script src="js/mahjong/yaku.js"></script>
+  <script src="js/mahjong/analysis.js"></script>
+  <script src="js/mahjong/skills.js"></script>
+  <script src="js/mahjong/round.js"></script>
+  <script src="js/mahjong/ai.js"></script>
+  <script src="js/mahjong/scenario.js"></script>
+
+  <!-- game -->
+  <script src="js/save.js"></script>
+  <script src="js/i18n.js"></script>
+  <!-- generated artwork: the manifest lists what exists, assets.js falls back to built-in art for the rest -->
+  <script src="assets/manifest.js"></script>
+  <script src="js/assets.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/data/characters.js"></script>
+  <script src="js/data/stages.js"></script>
+  <script src="js/data/chapter1.js"></script>
+  <script src="js/data/howto.js"></script>
+  <script src="js/ui/tileview.js"></script>
+  <script src="js/ui/decision.js"></script>
+  <script src="js/ui/cutin.js"></script>
+  <script src="js/ui/battle.js"></script>
+  <script src="js/story/vn.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+/*
+ * Battle campaign. Each stage is a mahjong match with a clear condition.
+ * The human always sits at seat 0 (bottom). Seat 1 is to the right and
+ * plays next, seat 2 sits across, seat 3 is to the left.
+ *
+ *   scores       starting points per seat
+ *   firstDealer  seat that deals the first hand of a wind round
+ *   startWind / endWind   0 = East round, 1 = South round
+ *   goal.check(final)     final = { scores, ranking, place } -> cleared?
+ *   ai           one entry per seat (null for the human), see js/mahjong/ai.js:
+ *                  style   'aggressor' | 'collaborator' | 'independent' - chosen to fit the story
+ *                  level   0..1 playing strength
+ *                  ally    (collaborator) the seat he plays for;  signal  how reliably they pass signals;
+ *                          feed  how readily he gives a big hand to the ally
+ *   skills       one entry per seat: { skill: 'insight' | 'flow', gauge: starting rage } or null
+ *   opening      the match starts in the middle of its first hand, at a decision taken from
+ *                the story. What the player chooses changes what follows:
+ *                  scenario  the position (format: js/mahjong/scenario.js)
+ *                  forced    seats whose first action is scripted ('drawn' = throw the drawn tile)
+ *                  kind      'call'    - answer the first discard: options are 'ron' and 'pass'
+ *                            'discard' - choose a discard: options name tiles ('2p', or '*' for the rest)
+ *                  prelude   lines shown when the hand appears, before anything moves
+ *                  intro     lines shown at the decision, before the choice
+ *                  options   [{ id, label / tiles, note (commentary), after (lines), effects,
+ *                              later (lines after the hand ends), laterEffects }]
+ *                  effects   { grant: { seat, skill, gauge } }   { gauge: { seat, set | add } }
+ *                            { underrate: { seats, target } }    { sense: { seat, target } }
+ *
+ * Text is written as L(english, japanese, chinese). All of it is original to this project.
+ */
+(function (root) {
+  'use strict';
+
+  const L = (en, ja, zh) => ({ en, ja, zh });
+
+  const N = {
+    akagi: L('Akagi', 'アカギ', '赤木'),
+    ryuzaki: L('Ryuzaki', '竜崎', '龙崎'),
+    thug: L('Thug', 'チンピラ', '打手'),
+    lackey: L('Lackey', '子分', '跟班'),
+    yagi: L('Yagi', '矢木', '矢木'),
+  };
+
+  const STAGES = [
+    {
+      id: 'storm',
+      no: 1,
+      title: L('The Stormy Night', '嵐の夜', '暴风雨之夜'),
+      opponent: L('Ryuzaki and his men', '竜崎とその手下', '龙崎和他的手下'),
+      blurb: L(
+        'Take over Nangou\'s seat for the South round. He is in last place, and his life is the stake.',
+        '南場から、南郷に代わって卓につく。現在ラス目、賭けられているのは彼の命。',
+        '从南场开始接替南乡上桌。他目前排在末位，赌注是他的性命。'),
+      names: [N.akagi, N.ryuzaki, N.thug, N.lackey],
+      who: ['akagi', 'ryuzaki', 'thug', 'thug'],
+      portraits: ['akagi', 'ryuzaki', 'thug', 'thug:angry'],   // 'id' or 'id:expression'
+      // Ryuzaki goes for the kill; his right-hand man plays for him; the hanger-on looks after himself
+      ai: [
+        null,
+        { style: 'aggressor', level: 0.92 },
+        { style: 'collaborator', level: 0.8, ally: 1, signal: 0.8 },
+        { style: 'independent', level: 0.7 },
+      ],
+      skills: [{ skill: 'insight', gauge: 40 }, null, null, null],
+      opening: {
+        scenario: {
+          turn: 3, n: 5, dora: '9m',
+          hands: { 0: '234567m67p567s88s' },
+          rivers: { 0: '4z1p9s2z5z' },
+          draws: ['8p'],
+          avoid: '5p8p',
+        },
+        forced: [{ seat: 3, discard: 'drawn' }],
+        kind: 'call',
+        title: L('The first winning tile', '最初の当たり牌', '第一张和牌'),
+        prelude: [
+          { text: L(
+            'South 1. Six turns in, the boy had not said a word - and his tiles had quietly come together.',
+            '南一局。六巡目。少年は一言も発しないまま——その手は、静かにまとまっていた。',
+            '南一局。第六巡。少年一句话也没说——手里的牌却已悄悄成形。') },
+          { who: 'nangou', face: 'shock', think: true, text: L(
+            'He is ready. Already? …And he never declared riichi. Does he even know he can?',
+            'テンパイしてる。もう……？　それにリーチもかけていない。かけられると分かってるのか、こいつは。',
+            '他听牌了。这么快？……而且没有立直。这小子到底知不知道自己可以立直？') },
+        ],
+        intro: [
+          { fx: 'clack', text: L(
+            'Then the lackey\'s discard hit the felt.',
+            'そのとき、子分の捨て牌が卓を叩いた。',
+            '就在这时，跟班打出的牌落在了桌上。') },
+          { who: 'nangou', face: 'shock', text: L(
+            'That\'s it - that is your tile! Say it, Akagi. *Ron!*',
+            'それだ……それがお前のアガリ牌だ！　言え、赤木。*ロン*だ！',
+            '就是它——那是你的和牌！快喊，赤木。*荣*！') },
+          { who: 'akagi', face: 'calm', text: L(
+            '…The cheap side.',
+            '……安目か。',
+            '……是小的那一边。') },
+        ],
+        options: [
+          {
+            id: 'ron',
+            label: L('Ron - take the win', 'ロン——アガる', '荣和——拿下这一局'),
+            note: [
+              { who: 'nangou', face: 'worried', text: L(
+                'Take it! A win is a win. Two thousand points, and their dealer turn is gone. Don\'t get greedy on your very first hand.',
+                'アガれ！　アガリはアガリだ。二千点、それに奴らの親も流れる。最初の一局から欲をかくな。',
+                '和吧！和了就是和了。两千点，还能把他们的庄打掉。第一局就别贪了。') },
+            ],
+            after: [
+              { who: 'akagi', face: 'calm', text: L('Ron.', 'ロン。', '荣。') },
+            ],
+            later: [
+              { text: L(
+                'Two thousand points changed hands. The lackey clicked his tongue and paid.',
+                '二千点が動いた。子分は舌打ちして、点棒を払った。',
+                '两千点易手。跟班咂了下嘴，付了点棒。') },
+              { who: 'ryuzaki', face: 'irritated', text: L(
+                '…He was ready, and he sat there without a sound. No riichi. No tell. That is not beginner\'s luck.',
+                '……テンパイしてやがったのに、音ひとつ立てなかった。リーチもなし、気配もなし。ありゃあ素人のまぐれじゃねえ。',
+                '……他早就听牌了，却一点声息都没有。不立直，不露破绽。这可不是新手的运气。') },
+              { who: 'ryuzaki', face: 'smug', text: L(
+                'Fine. From here on I watch every tile that kid touches.',
+                'いいだろう。ここからは、あのガキが触る牌を、一枚残らず見てやる。',
+                '行。从现在起，那小鬼摸的每一张牌，我都要盯死。') },
+            ],
+            laterEffects: [{ grant: { seat: 1, skill: 'insight', gauge: 50 } }],
+          },
+          {
+            id: 'pass',
+            label: L('Let it pass', '見逃す', '放过这张'),
+            note: [
+              { who: 'nangou', face: 'shock', text: L(
+                'Let it go?! Pass it and you cannot call ron again until your next draw - and the five may never come!',
+                '見逃すだと！？　見逃したら、次のツモまでロンはできないんだぞ。それに五筒が出てくる保証なんて、どこにもない！',
+                '放过去？！放过之后，到你下次摸牌之前都不能荣和——而且五筒未必会来！') },
+              { who: 'akagi', face: 'smirk', text: L(
+                'Two thousand from the errand boy changes nothing. The other side of this wait is worth four times as much.',
+                '使い走りから二千点取っても、何も変わらない。この待ちの反対側は、その四倍だ。',
+                '从跑腿的手里拿两千点，什么都改变不了。这个听牌的另一边，值它的四倍。') },
+            ],
+            after: [
+              { text: L(
+                'The boy did not move. The tile lay there, and the turn passed.',
+                '少年は動かなかった。牌はそこに置かれたまま、巡目だけが過ぎた。',
+                '少年没有动。那张牌就躺在那里，这一巡就这样过去了。') },
+              { who: 'nangou', face: 'shock', text: L(
+                'W-what are you doing?! That was your winning tile!',
+                'な、何をしてる！？　今のはお前のアガリ牌だぞ！',
+                '你、你在干什么？！刚才那可是你的和牌！') },
+              { who: 'thug', face: 'sneer', text: L(
+                'Heh. The brat doesn\'t even know when he has won. Relax, boss - he\'s a pigeon.',
+                'へっ。このガキ、自分がアガってることにも気づいてねえ。安心しなよ兄貴、ただのカモだ。',
+                '嘿。这小鬼连自己和了都不知道。放心吧大哥，就是只肥羊。') },
+              { who: 'akagi', face: 'glare', think: true, text: L(
+                'Good. Keep thinking that.',
+                'それでいい。そう思っていてくれ。',
+                '很好。就这么想下去吧。') },
+            ],
+            effects: [{ gauge: { seat: 0, add: 30 } }, { underrate: { seats: [1, 2, 3], target: 0 } }],
+          },
+        ],
+      },
+      scores: [22000, 29000, 25000, 24000],
+      firstDealer: 2,
+      startWind: 1,
+      endWind: 1,
+      goal: {
+        text: L(
+          'Finish the South round in 2nd place or better.',
+          '南場終了時に2着以上になる。',
+          '南场结束时取得第2名以上。'),
+        check: final => final.place[0] <= 2,
+      },
+      available: true,
+    },
+    {
+      id: 'yagi',
+      no: 2,
+      title: L('The Substitute', '代打ち', '代打'),
+      opponent: L('Yagi, the house professional', '代打ちの玄人・矢木', '职业代打·矢木'),
+      blurb: L(
+        'The yakuza send in a man who plays for a living. An East-round duel on even points.',
+        'ヤクザが送り込んだのは、麻雀で飯を食う男。持ち点は同じ、東場一回の勝負。',
+        '黑道派来了一个靠麻将吃饭的男人。点数相同，东场一战定胜负。'),
+      names: [N.akagi, N.yagi, N.ryuzaki, N.thug],
+      who: ['akagi', 'yagi', 'ryuzaki', 'thug'],
+      portraits: ['akagi', 'yagi', 'ryuzaki', 'thug'],
+      // the hired professional trusts nobody and plays his own game; Ryuzaki, who is paying
+      // for him, feeds him; the thug just swings
+      ai: [
+        null,
+        { style: 'independent', level: 0.88 },
+        { style: 'collaborator', level: 0.8, ally: 1, signal: 0.4, feed: 0.1 },
+        { style: 'aggressor', level: 0.6 },
+      ],
+      skills: [{ skill: 'insight', gauge: 60 }, { skill: 'insight', gauge: 0 }, null, { skill: 'flow', gauge: 0 }],
+      opening: {
+        scenario: {
+          turn: 0, n: 8, dora: '9s',
+          hands: { 0: '34578m2456p1167s', 1: '45699m13p234678s' },
+          rivers: { 0: '1z9p3z9s6z1m7z2s', 1: '4z9p1s5z2m8m5p3z' },
+          riichi: { 1: 6 },
+          draws: ['8s'],
+          avoid: '2p',
+        },
+        kind: 'discard',
+        title: L('The professional\'s riichi', '玄人のリーチ', '职业高手的立直'),
+        prelude: [
+          { text: L(
+            'East 1. Yagi had laid a tile sideways without raising his voice.',
+            '東一局。矢木は声を張ることもなく、牌を横に置いていた。',
+            '东一局。矢木连声音都没抬高，就把一张牌横着放了下去。') },
+          { who: 'yagi', face: 'smile', text: L(
+            'Riichi. Take your time, boy.',
+            'リーチ。ゆっくり考えな、坊や。',
+            '立直。慢慢想吧，小弟弟。') },
+        ],
+        intro: [
+          { who: 'nangou', face: 'worried', think: true, text: L(
+            'A professional\'s riichi… and Akagi has just drawn into a ready hand of his own.',
+            '玄人のリーチ……しかも赤木は、いまのツモで自分もテンパイだ。',
+            '职业高手的立直……而赤木刚摸的这张，让他自己也听牌了。') },
+          { text: L(
+            'To be ready, the two of circles has to go.',
+            'テンパイに取るには、二筒を切るしかない。',
+            '要听牌，就必须打出二筒。') },
+        ],
+        notes: {
+          '2p': [
+            { who: 'nangou', face: 'resolve', text: L(
+              'He threw the five of circles himself when he declared. The two is suji - a two-sided wait cannot hit it. It should be safe, and it makes you ready.',
+              '奴はリーチのとき、自分で五筒を切ってる。二筒はスジだ——両面待ちには当たらない。通るはずだし、これでテンパイだ。',
+              '他立直时自己打了五筒。二筒是筋牌——两面听不会和这张。应该能过，而且打了就听牌。') },
+            { who: 'akagi', face: 'calm', think: true, text: L(
+              '"Should be." That is exactly the word he wants me to lean on.',
+              '「はず」……か。奴がオレに寄りかからせたいのは、まさにその言葉だ。',
+              '“应该”……他想让我依靠的，正是这两个字。') },
+          ],
+          '1s': [
+            { who: 'nangou', face: 'worried', text: L(
+              'The one of bamboo - he discarded it himself, so it cannot deal in. But that is your dora pair. Throw it and this hand is worth nothing.',
+              '一索か。奴自身が切ってるから、絶対に当たらない。だがそれはお前のドラの対子だ。切れば、この手の値打ちは消える。',
+              '一索——他自己打过，绝对不会放铳。但那是你的宝牌对子。打掉它，这手牌就不值钱了。') },
+          ],
+          '*': [
+            { who: 'nangou', face: 'worried', text: L(
+              'That one breaks up the hand. If you are going to step back, at least make sure the tile is safe.',
+              'それを切れば手が崩れる。下がるなら、せめて安全な牌で下がれ。',
+              '打那张，手牌就散了。要退的话，至少得退在安全牌上。') },
+          ],
+        },
+        options: [
+          {
+            id: 'trap', tiles: '2p',
+            after: [
+              { fx: 'clack', text: L(
+                'The two of circles left his fingers.',
+                '二筒が、指を離れた。',
+                '二筒离开了他的手指。') },
+            ],
+            later: [
+              { text: L(
+                'Yagi\'s tiles came down: a closed wait on the two of circles - baited with the five he had thrown himself.',
+                '矢木の手牌が倒された。二筒のカンチャン待ち——自分で切った五筒を餌にした罠だ。',
+                '矢木的手牌倒了下来：嵌张听二筒——用他自己打出的五筒做的饵。') },
+              { who: 'nangou', face: 'shock', text: L(
+                'A suji trap…! He threw the five *so that* you would trust the two!',
+                'スジ引っかけ……！　二筒を信用させる*ために*、五筒を切ったのか！',
+                '筋牌陷阱……！他打五筒，*就是为了*让你相信二筒！') },
+              { who: 'akagi', face: 'smirk', text: L(
+                'I see. So that is how you think.',
+                'なるほど。あんたは、そういう考え方をするんだ。',
+                '原来如此。你是这样想事情的。') },
+              { who: 'akagi', face: 'glare', think: true, text: L(
+                'Then I only have to think one layer deeper than that.',
+                'なら、その一枚奥を読めばいいだけのことだ。',
+                '那我只要比这再多想一层就行了。') },
+            ],
+            laterEffects: [{ gauge: { seat: 0, set: 100 } }, { sense: { seat: 0, target: 1 } }],
+          },
+          {
+            id: 'safe', tiles: '*',
+            after: [
+              { text: L(
+                'The boy\'s hand stopped over the two of circles - and moved on to another tile.',
+                '少年の手は二筒の上で止まり——別の牌へと移った。',
+                '少年的手在二筒上方停住——然后移向了另一张牌。') },
+              { who: 'yagi', face: 'focus', text: L(
+                '…Hoh. You didn\'t bite.',
+                '……ほう。食いつかなかったか。',
+                '……哦。没上钩啊。') },
+              { who: 'yagi', face: 'focus', think: true, text: L(
+                'Not an amateur, then. Enough playing with him.',
+                '素人じゃないな。遊びは、ここまでにしよう。',
+                '看来不是外行。不陪他玩了。') },
+            ],
+            effects: [{ gauge: { seat: 1, add: 60 } }],
+          },
+        ],
+      },
+      scores: [25000, 25000, 25000, 25000],
+      firstDealer: 3,
+      startWind: 0,
+      endWind: 0,
+      goal: {
+        text: L(
+          'Finish the East round with more points than Yagi.',
+          '東場終了時に、矢木より多くの点数を持っている。',
+          '东场结束时，点数高于矢木。'),
+        check: final => final.scores[0] > final.scores[1],
+      },
+      available: true,
+    },
+    {
+      id: 'ichikawa', no: 3, available: false,
+      title: L('The Blind Master', '盲目の達人', '盲眼高手'),
+      opponent: L('Ichikawa', '市川', '市川'),
+    },
+    {
+      id: 'urabe', no: 4, available: false,
+      title: L('The Impostor\'s Table', 'ニセモノの卓', '冒牌货的牌桌'),
+      opponent: L('Urabe', '浦部', '浦部'),
+    },
+    {
+      id: 'washizu', no: 5, available: false,
+      title: L('The Transparent Tiles', '透明な牌', '透明的牌'),
+      opponent: L('Washizu', '鷲巣', '鹫巢'),
+    },
+  ];
+
+  const byId = {};
+  STAGES.forEach(s => { byId[s.id] = s; });
+
+  root.Stages = {
+    list: STAGES,
+    get: id => byId[id],
+    /** a stage is unlocked when every earlier stage has been cleared */
+    isUnlocked(id, save) {
+      for (const s of STAGES) {
+        if (s.id === id) return !!s.available;
+        if (!save.cleared[s.id]) return false;
+      }
+      return false;
+    },
+    next(id) {
+      const i = STAGES.findIndex(s => s.id === id);
+      const n = STAGES[i + 1];
+      return n && n.available ? n : null;
+    },
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
