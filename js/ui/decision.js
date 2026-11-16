@@ -1,13 +1,14 @@
 /*
  * Decision scenes: the hand laid out, what each choice leads to, and the
- * commentary on it (shown as text and spoken through js/voice.js).
+ * commentary on it (shown as text, and spoken through js/voice.js by the
+ * characters' recorded voices and the 'guide' voice that reads the analysis).
  *
  *   TableBoard.html(table)           a table seen from one seat (story scenes): ponds, dora, hand
  *   Explain.*                        turn Analysis results into localized text
  *   Decision.open(host, opts)        the interactive panel; resolves with the chosen key
  *       kind 'discard'  opts.hand = tile types (the drawn one last), opts.rows = Analysis.discards(view)
  *                       resolves with the tile type
- *       kind 'choice'   opts.choices = [{ key, label, sub, html, speech }]   resolves with the key
+ *       kind 'choice'   opts.choices = [{ key, label, sub, html, speech: [sentences] }]   resolves with the key
  *       opts.notes(key) -> commentary lines [{ who, face, text, think }] for a choice
  *       opts.nameOf(seat) -> display name of a seat
  *
@@ -93,20 +94,33 @@
       return head + body;
     },
 
-    /** one or two plain sentences for the voice */
+    /**
+     * The readout of one discard, as sentences for the voice. Nothing in them
+     * depends on the random tiles of a match except the danger level, which
+     * has its own sentence - so every sentence can be recorded in advance
+     * (tools/voice_lines.js enumerates them).
+     */
     discardSpeech(row, nameOf) {
       const tile = I18n.tileName(row.t);
-      let s;
+      const out = [];
       if (row.tenpai) {
         const waits = I18n.list(row.tenpai.waits.map(w => I18n.tileName(w.t)));
-        s = row.tenpai.value.best
-          ? T('say.tenpai', { tile, waits, n: row.tenpai.live, pts: fmt(row.tenpai.value.max) })
-          : T('say.tenpaiNoYaku', { tile, waits, n: row.tenpai.live });
+        out.push(row.tenpai.value.best
+          ? T('say.tenpai', { tile, waits, pts: fmt(row.tenpai.value.max) })
+          : T('say.tenpaiNoYaku', { tile, waits }));
       } else {
-        s = T('say.shanten', { tile, n: row.shanten, u: row.ukeire });
+        out.push(T('say.shanten', { tile, n: row.shanten }));
       }
-      if (row.risk) s += ' ' + T('say.danger', { name: nameOf(row.risk.seat), level: T('an.level.' + row.level) });
-      return s;
+      if (row.risk) out.push(Explain.dangerSpeech(nameOf(row.risk.seat), row.level));
+      return out;
+    },
+
+    dangerSpeech(name, level) { return T('say.danger', { name, level: T('an.level.' + level) }); },
+
+    /** the two answers to a winning tile: take it now, or stay ready */
+    ronSpeech(pay, payer) { return [T('say.ron', { pts: fmt(pay), name: payer })]; },
+    passSpeech(quiet, best) {
+      return [T('say.pass', { waits: I18n.list(quiet.waits.map(w => I18n.tileName(w.t))), pts: fmt(best) })];
     },
 
     /** winning now: what the hand pays */
@@ -225,8 +239,8 @@
       const voiceLabel = () => {
         const btn = $('[data-dec="voice"]');
         btn.textContent = T('an.voice', { v: T(Voice.enabled ? 'on' : 'off') });
-        btn.title = Voice.supported && Voice.available() ? '' : T('an.voiceNone');
-        btn.classList.toggle('dim', !(Voice.supported && Voice.available()));
+        btn.title = Voice.available() ? '' : T('an.voiceNone');
+        btn.classList.toggle('dim', !Voice.available());
       };
       voiceLabel();
 
@@ -248,7 +262,7 @@
             (who ? `<b style="color:${who.color}">${esc(P(who.name))}</b>` : '') +
             `<span>${l.think ? esc(T('vn.thinkOpen')) : ''}${text}${l.think ? esc(T('vn.thinkClose')) : ''}</span></div></div>`;
         }).join('');
-        if (speak) Voice.say([{ who: 'narrator', text: d.speech }].concat(lines.map(l => ({ who: l.who, text: P(l.text) }))));
+        if (speak) Voice.say(d.speech.map(text => ({ who: 'guide', text })).concat(lines.map(l => ({ who: l.who, text: P(l.text) }))));
       };
 
       const select = key => {

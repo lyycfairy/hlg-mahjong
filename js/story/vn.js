@@ -59,6 +59,7 @@
           <button data-vn="auto">${esc(I18n.t('vn.auto'))}</button>
           <button data-vn="skip">${esc(I18n.t('vn.skip'))}</button>
           <button data-vn="sound"></button>
+          <button data-vn="voice"></button>
           <button data-vn="quit">${esc(I18n.t('vn.title'))}</button>
         </div>
         <div class="vn-log" hidden></div>`;
@@ -70,6 +71,8 @@
         Sfx.unlock();
         const tool = e.target.closest('[data-vn]');
         if (tool) { this.onTool(tool.dataset.vn); return; }
+        const replay = e.target.closest('[data-replay]');
+        if (replay) { const l = this.log[+replay.dataset.replay]; if (l) Voice.line(l.who, l.raw); return; }
         const ch = e.target.closest('[data-choice]');
         if (ch) { if (this._choose) this._choose(+ch.dataset.choice); return; }
         if (!this.$('.vn-log').hidden) { this.$('.vn-log').hidden = true; return; }
@@ -96,6 +99,7 @@
       this.$('[data-vn="auto"]').classList.toggle('on', this.auto);
       this.$('[data-vn="skip"]').classList.toggle('on', this.skip);
       this.$('[data-vn="sound"]').textContent = I18n.t('sound', { v: I18n.t(Sfx.muted ? 'off' : 'on') });
+      this.$('[data-vn="voice"]').textContent = I18n.t('an.voice', { v: I18n.t(Voice.enabled ? 'on' : 'off') });
     }
 
     onTool(name) {
@@ -104,7 +108,7 @@
         case 'auto':
           this.auto = !this.auto; this.skip = false;
           this.updateTools();
-          if (this.auto && this._lineDone) this.advance();
+          if (this.auto && this._lineDone && this._autoFrom) this._autoFrom();
           break;
         case 'skip':
           this.skip = !this.skip; this.auto = false;
@@ -114,7 +118,11 @@
         case 'sound':
           Sfx.setMuted(!Sfx.muted);
           Save.data.settings.muted = Sfx.muted; Save.write();
-          if (!Sfx.muted) Sfx.rain(this.rain);
+          if (!Sfx.muted) Sfx.rain(this.rain); else Voice.stop();
+          this.updateTools();
+          break;
+        case 'voice':
+          Voice.setEnabled(!Voice.enabled);
           this.updateTools();
           break;
         case 'quit':
@@ -397,7 +405,11 @@
       faceEl.innerHTML = this.table && cmd.who ? Portraits.avatar(cmd.who + (face ? ':' + face : '')) : '';
       if (cmd.who && face) this.faces[cmd.who] = face;
       this.setSpeaker(cmd.who || null);
-      this.log.push({ name: whoName, color: who ? who.color : '', text, think: !!cmd.think });
+      this.log.push({ name: whoName, color: who ? who.color : '', text, think: !!cmd.think, who: cmd.who || null, raw: text });
+
+      // the character's recorded voice (narration is not voiced); skipping stays silent
+      const voiced = cmd.who && !this.skip ? Voice.line(cmd.who, text) : (Voice.stop(), Promise.resolve(false));
+      this.preloadVoices();
 
       // split into characters, toggling emphasis on *asterisks*
       let html = '', em = false;
@@ -413,7 +425,11 @@
 
       return new Promise(resolve => {
         let shown = 0;
+        const started = Date.now();
+        let gone = false;
         const go = () => {
+          if (gone) return;
+          gone = true;
           clearInterval(this._typeTimer);
           clearTimeout(this._autoTimer);
           this.onAdvance = null;
@@ -425,8 +441,9 @@
           this._lineDone = true;
           next.classList.add('show');
           if (this.skip) this._autoTimer = setTimeout(go, 45);
-          else if (this.auto) this._autoTimer = setTimeout(go, 900 + spans.length * 32);
+          else if (this.auto) this.autoAdvance(go, voiced, started, 900 + spans.length * 32);
         };
+        this._autoFrom = () => this.autoAdvance(go, voiced, started, 900 + spans.length * 32);
         this.onAdvance = () => { if (!this._lineDone) finishTyping(); else go(); };
         if (this.skip) { finishTyping(); return; }
         this._typeTimer = setInterval(() => {
@@ -436,8 +453,29 @@
       });
     }
 
+    /** Auto mode: move on once the text has had time to be read and the voice has finished */
+    autoAdvance(go, voiced, started, readMs) {
+      const lineNo = this.i;
+      voiced.then(spoke => {
+        if (this.dead || !this.auto || this.i !== lineNo) return;
+        const wait = spoke ? 450 : Math.max(0, readMs - (Date.now() - started));
+        clearTimeout(this._autoTimer);
+        this._autoTimer = setTimeout(go, wait);
+      });
+    }
+
+    /** fetch the next couple of voiced lines while this one plays */
+    preloadVoices() {
+      let n = 0;
+      for (let k = this.i; k < this.script.length && k < this.i + 12 && n < 2; k++) {
+        const c = this.script[k];
+        if (c.who && c.text != null) { Voice.preload(c.who, I18n.pick(c.text)); n++; }
+      }
+    }
+
     choose(options) {
       this.skip = false;
+      this._autoFrom = null;
       this.updateTools();
       const box = this.$('.vn-choices');
       box.innerHTML = options.map((o, i) => `<button data-choice="${i}">${esc(I18n.pick(o.text))}</button>`).join('');
@@ -470,10 +508,12 @@
 
     showLog() {
       const box = this.$('.vn-log');
-      box.innerHTML = '<div class="log-inner"><h3>' + esc(I18n.t('vn.backlog')) + '</h3>' + this.log.map(l =>
+      box.innerHTML = '<div class="log-inner"><h3>' + esc(I18n.t('vn.backlog')) + '</h3>' + this.log.map((l, i) =>
         `<div class="log-line${l.think ? ' think' : ''}${l.choice ? ' choice' : ''}">` +
         (l.name ? `<b style="color:${l.color}">${esc(l.name)}</b>` : '') +
-        `<span>${esc(l.text.replace(/\*/g, ''))}</span></div>`).join('') +
+        `<span>${esc(l.text.replace(/\*/g, ''))}</span>` +
+        (l.who && Voice.has(l.who, l.raw) ? `<button class="log-replay" data-replay="${i}" title="${esc(I18n.t('vn.replay'))}" aria-label="${esc(I18n.t('vn.replay'))}">▶</button>` : '') +
+        '</div>').join('') +
         '<p class="log-close">' + esc(I18n.t('vn.logClose')) + '</p></div>';
       box.hidden = false;
       const inner = box.querySelector('.log-inner');

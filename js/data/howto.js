@@ -43,8 +43,14 @@
       <h3>The opening decision</h3>
       <p>Each stage opens in the middle of its first hand, at a decision taken from the story - call the win or let it go, throw this tile or that one.
       The panel shows where each choice leads: ready or not, the waits and how many are left, what the hand pays, and how dangerous the tile is.
-      A commentary goes with it, in text and (if your browser has a voice for the language) aloud; the <b>Voice</b> button turns that off.
+      A commentary goes with it, read aloud - the analysis by a guide, the advice by the characters themselves.
       What you choose changes the rest of the match - an opponent may gain a skill, or stop taking you seriously.</p>
+
+      <h3>Voices</h3>
+      <p>Every character line is voiced in all three languages, and each character has a voice of his own, chosen for his age and manner -
+      the boy's is light and flat, Ryuzaki's deep and slow. At the table the players call their riichi, pon, chi, ron and tsumo aloud.
+      <b>Voice</b> in the story's toolbar and at the table turns voices off; <b>Sound: Off</b> silences everything.
+      In the backlog, ▶ plays a line again.</p>
 
       <h3>Who you are playing</h3>
       <ul>
@@ -94,8 +100,14 @@
       <h3>開局の決断</h3>
       <p>各ステージは、最初の局の途中——物語の決断の場面から始まります。アガるか見逃すか、どの牌を切るか。
       パネルには、それぞれの選択の行き先が示されます。テンパイかどうか、待ちと残り枚数、打点、そしてその牌の危険度です。
-      解説は文字で表示され、ブラウザにその言語の音声があれば読み上げられます（<b>音声</b>ボタンで切り替え）。
+      解説は文字で表示され、読み上げられます——分析はナレーターが、助言は登場人物自身の声で。
       選んだ道によって、その後の対局が変わります——相手がスキルを身につけることもあれば、こちらを甘く見ることもあります。</p>
+
+      <h3>ボイス</h3>
+      <p>登場人物のセリフは三言語すべてで音声つきです。声は一人ひとり違い、年齢と人柄に合わせて選んでいます——少年は軽く平板に、竜崎は低く、ゆっくりと。
+      卓では、リーチ・ポン・チー・ロン・ツモも声に出して宣言します。
+      ストーリーのツールバーと卓上の<b>音声</b>ボタンで声をオフにでき、<b>サウンド：オフ</b>ですべての音が止まります。
+      バックログの ▶ で、そのセリフをもう一度聞けます。</p>
 
       <h3>相手のタイプ</h3>
       <ul>
@@ -144,8 +156,14 @@
       <h3>开局的抉择</h3>
       <p>每一关都从第一局的中途开始——从故事里的一个抉择开始：和，还是放过？打这张，还是那张？
       面板会显示每个选择的走向：是否听牌、听哪些牌还剩几张、打点多少，以及这张牌有多危险。
-      解说会以文字显示，如果浏览器装有对应语言的语音，还会朗读出来（可用<b>语音</b>按钮关闭）。
+      解说会以文字显示并朗读出来——分析由旁白朗读，建议则由角色亲口说出。
       你的选择会改变之后的对局——对手可能学会技能，也可能不再把你放在眼里。</p>
+
+      <h3>配音</h3>
+      <p>角色的每一句台词在三种语言中都有配音，而且每个角色的声音都不同，按年龄和性格挑选——少年的声音轻而平淡，龙崎的声音低沉而缓慢。
+      牌桌上，立直、碰、吃、荣和、自摸也都会喊出声来。
+      故事工具栏和牌桌上的<b>语音</b>按钮可以关闭配音；<b>音效：关</b>会让所有声音静音。
+      在对话记录里点 ▶ 可以重听那句台词。</p>
 
       <h3>对手的类型</h3>
       <ul>

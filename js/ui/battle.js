@@ -129,6 +129,7 @@
           <div class="b-tools">
             <button class="btn-ghost" data-act="speed"></button>
             <button class="btn-ghost" data-act="sound"></button>
+            <button class="btn-ghost" data-act="voice"></button>
             <button class="btn-ghost" data-act="quit">${esc(T('b.quit'))}</button>
           </div>
         </header>
@@ -182,11 +183,18 @@
     updateTools() {
       this.$('[data-act="speed"]').textContent = T('b.speed', { v: T(this.speed < 1 ? 'b.fast' : 'b.normal') });
       this.$('[data-act="sound"]').textContent = T('sound', { v: T(Sfx.muted ? 'off' : 'on') });
+      this.$('[data-act="voice"]').textContent = T('an.voice', { v: T(Voice.enabled ? 'on' : 'off') });
+    }
+
+    /** whose voice a seat speaks with ('lackey' has a voice but no portrait of his own) */
+    voiceOf(seat) {
+      const st = this.stage;
+      return (st.who && st.who[seat]) || String(st.portraits[seat]).split(':')[0];
     }
 
     onClick(e) {
       const btn = e.target.closest('[data-act]');
-      if (btn && (btn.dataset.act === 'speed' || btn.dataset.act === 'sound' || btn.dataset.act === 'quit')) { this.onAction(btn.dataset.act, btn); return; }
+      if (btn && ['speed', 'sound', 'voice', 'quit'].indexOf(btn.dataset.act) >= 0) { this.onAction(btn.dataset.act, btn); return; }
       if (this._sceneNext) { if (e.target.closest('.b-scene')) this._sceneNext(); return; }
       if (this.busy) return;
       if (btn) { this.onAction(btn.dataset.act, btn); return; }
@@ -215,6 +223,11 @@
         case 'sound':
           Sfx.setMuted(!Sfx.muted);
           Save.data.settings.muted = Sfx.muted; Save.write();
+          if (Sfx.muted) Voice.stop();
+          this.updateTools();
+          return;
+        case 'voice':
+          Voice.setEnabled(!Voice.enabled);
           this.updateTools();
           return;
         case 'quit':
@@ -361,6 +374,8 @@
           }
           const l = lines[i++];
           if (l.fx === 'clack') Sfx.tile(); else Sfx.click();
+          if (l.who) Voice.line(l.who, P(l.text)); else Voice.stop();
+          for (const n of lines.slice(i, i + 2)) if (n.who) Voice.preload(n.who, P(n.text));
           if (l.note) {
             box.innerHTML = `<div class="scene-line note"><div class="scene-body"><p>${esc(l.note)}</p></div><span class="scene-next">▼</span></div>`;
             return;
@@ -407,10 +422,10 @@
       const choices = op.options.map(o => (o.id === 'ron'
         ? { key: 'ron', label: P(o.label), sub: T('an.ron.sub', { n: fmt(pay) }),
             html: Explain.ronHtml(res, pay, this.name(opts.from), tile),
-            speech: T('say.ron', { pts: fmt(pay), name: this.name(opts.from) }) }
+            speech: Explain.ronSpeech(pay, this.name(opts.from)) }
         : { key: o.id, label: P(o.label), sub: T('an.pass.sub', { n: fmt(best) }),
             html: Explain.passHtml(quiet, loud),
-            speech: T('say.pass', { waits: I18n.list(quiet.waits.map(w => I18n.tileName(w.t))), n: quiet.live, pts: fmt(best) }) }));
+            speech: Explain.passSpeech(quiet, best) }));
       const key = await this.decide({
         kind: 'choice', title: P(op.title), situation, choices,
         notes: k => (op.options.find(o => o.id === k) || {}).note,
@@ -486,6 +501,7 @@
           break;
         case 'skill':
           this.render();
+          Voice.shout(this.voiceOf(evt.seat), evt.skill);
           await this.cutin(evt.seat, evt.skill);
           this.render();
           break;
@@ -513,17 +529,20 @@
         case 'riichi':
           this.render();
           Sfx.riichi();
+          Voice.call(this.voiceOf(evt.seat), 'riichi');
           await this.bubble(evt.seat, T('call.riichi'), 850);
           break;
         case 'call':
           this.lastDiscard = null;
           this.render();
           Sfx.call();
+          Voice.call(this.voiceOf(evt.seat), evt.callType);
           await this.bubble(evt.seat, T(evt.callType === 'pon' ? 'call.pon' : 'call.chi'), 650);
           break;
         case 'win':
           this.render();
           if (evt.result.winner === 0) Sfx.win(); else Sfx.lose();
+          Voice.call(this.voiceOf(evt.result.winner), evt.result.tsumo ? 'tsumo' : 'ron');
           await this.bubble(evt.result.winner, T(evt.result.tsumo ? 'call.tsumo' : 'call.ron'), 1100);
           break;
         case 'exhaustive':

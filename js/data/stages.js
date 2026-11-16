@@ -52,7 +52,7 @@
         '南場から、南郷に代わって卓につく。現在ラス目、賭けられているのは彼の命。',
         '从南场开始接替南乡上桌。他目前排在末位，赌注是他的性命。'),
       names: [N.akagi, N.ryuzaki, N.thug, N.lackey],
-      who: ['akagi', 'ryuzaki', 'thug', 'thug'],
+      who: ['akagi', 'ryuzaki', 'thug', 'lackey'],               // whose voice each seat speaks with
       portraits: ['akagi', 'ryuzaki', 'thug', 'thug:angry'],   // 'id' or 'id:expression'
       // Ryuzaki goes for the kill; his right-hand man plays for him; the hanger-on looks after himself
       ai: [

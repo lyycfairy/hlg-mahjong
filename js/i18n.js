@@ -146,12 +146,13 @@
     'an.confirm': 'Decide',
     'an.voice': 'Voice: {v}',
     'an.voiceNone': 'This browser has no voice installed for this language.',
-    'say.tenpai': 'Discard the {tile}: ready, waiting on the {waits}. {n} tiles left, worth up to {pts} points.',
-    'say.tenpaiNoYaku': 'Discard the {tile}: ready on the {waits}, {n} tiles left, but with no yaku.',
-    'say.shanten': 'Discard the {tile}: {n} away from ready. {u} tiles improve the hand.',
+    'say.tenpai': 'Discard the {tile}: ready, waiting on the {waits}, worth up to {pts} points.',
+    'say.tenpaiNoYaku': 'Discard the {tile}: ready on the {waits}, but with no yaku.',
+    'say.shanten': 'Discard the {tile}: {n} away from ready.',
     'say.danger': 'Danger against {name}: {level}.',
     'say.ron': 'Ron now: {pts} points from {name}, and the hand ends.',
-    'say.pass': 'Let it go: you stay ready on the {waits}, {n} tiles left, worth up to {pts} points. No ron until your next draw.',
+    'say.pass': 'Let it go: you stay ready on the {waits}, worth up to {pts} points. No ron until your next draw.',
+    'shout.skill': '{skill}!',
     'tb.hand': '{name}\'s hand',
 
     'hint.insightNone': 'Insight — nobody is waiting yet. The table is quiet.',
@@ -204,6 +205,7 @@
 
     'vn.log': 'Log', 'vn.auto': 'Auto', 'vn.skip': 'Skip', 'vn.title': 'Title',
     'vn.backlog': 'Backlog',
+    'vn.replay': 'Play this line again',
     'vn.logClose': 'Click anywhere to close',
     'vn.thinkOpen': '(', 'vn.thinkClose': ')',
 
@@ -383,12 +385,13 @@
     'an.confirm': '決定',
     'an.voice': '音声：{v}',
     'an.voiceNone': 'このブラウザには、この言語の音声がありません。',
-    'say.tenpai': '{tile}を切ればテンパイ。待ちは{waits}、残り{n}枚。最高{pts}点。',
-    'say.tenpaiNoYaku': '{tile}を切ればテンパイ。待ちは{waits}、残り{n}枚。ただし役がない。',
-    'say.shanten': '{tile}を切ると{n}シャンテン。有効牌は{u}枚。',
+    'say.tenpai': '{tile}を切ればテンパイ。待ちは{waits}。最高{pts}点。',
+    'say.tenpaiNoYaku': '{tile}を切ればテンパイ。待ちは{waits}。ただし役がない。',
+    'say.shanten': '{tile}を切ると{n}シャンテン。',
     'say.danger': '{name}に対する危険度は、{level}。',
     'say.ron': 'ロンすれば、{name}から{pts}点。この局は終わる。',
-    'say.pass': '見逃せば、{waits}待ちのテンパイ維持。残り{n}枚、最高{pts}点。次のツモまでロンはできない。',
+    'say.pass': '見逃せば、{waits}待ちのテンパイ維持。最高{pts}点。次のツモまでロンはできない。',
+    'shout.skill': '{skill}！',
     'tb.hand': '{name}の手牌',
 
     'hint.insightNone': '看破——まだ誰もテンパイしていない。卓は静かだ。',
@@ -441,6 +444,7 @@
 
     'vn.log': 'ログ', 'vn.auto': 'オート', 'vn.skip': 'スキップ', 'vn.title': 'タイトル',
     'vn.backlog': 'バックログ',
+    'vn.replay': 'このセリフをもう一度聞く',
     'vn.logClose': 'クリックで閉じる',
     'vn.thinkOpen': '（', 'vn.thinkClose': '）',
 
@@ -619,12 +623,13 @@
     'an.confirm': '决定',
     'an.voice': '语音：{v}',
     'an.voiceNone': '此浏览器没有安装这种语言的语音。',
-    'say.tenpai': '打{tile}听牌。听{waits}，还剩{n}张。最高{pts}点。',
-    'say.tenpaiNoYaku': '打{tile}听牌。听{waits}，还剩{n}张。但是没有役。',
-    'say.shanten': '打{tile}是{n}向听。有效进张{u}张。',
+    'say.tenpai': '打{tile}听牌。听{waits}。最高{pts}点。',
+    'say.tenpaiNoYaku': '打{tile}听牌。听{waits}。但是没有役。',
+    'say.shanten': '打{tile}是{n}向听。',
     'say.danger': '对{name}的危险度：{level}。',
     'say.ron': '现在荣和，从{name}那里拿{pts}点。这一局结束。',
-    'say.pass': '放过这张，继续听{waits}，还剩{n}张，最高{pts}点。到下次摸牌之前不能荣和。',
+    'say.pass': '放过这张，继续听{waits}，最高{pts}点。到下次摸牌之前不能荣和。',
+    'shout.skill': '{skill}！',
     'tb.hand': '{name}的手牌',
 
     'hint.insightNone': '洞察——还没有人听牌。牌桌很安静。',
@@ -677,6 +682,7 @@
 
     'vn.log': '记录', 'vn.auto': '自动', 'vn.skip': '跳过', 'vn.title': '标题',
     'vn.backlog': '对话记录',
+    'vn.replay': '重听这句台词',
     'vn.logClose': '点击任意处关闭',
     'vn.thinkOpen': '（', 'vn.thinkClose': '）',
 

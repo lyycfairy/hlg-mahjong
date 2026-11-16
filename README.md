@@ -35,6 +35,9 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   riichi, win or get hit. A full gauge fires the skill, with a cut-in.
 - **Three kinds of opponent** — the *aggressor* attacks, the *collaborator* plays for a team-mate, the
   *independent* plays his own game by the numbers. The briefing before each stage says who is which.
+- **Voices** — every character line is voiced in Japanese, Chinese and English, each character with a voice
+  of his own chosen for his age and manner, and the players call riichi, pon, chi, ron and tsumo aloud.
+  The **Voice** button in the story toolbar and at the table turns voices off; ▶ in the backlog replays a line.
 
 ## Mahjong rules
 
@@ -50,6 +53,8 @@ double ron — one discard has one winner.
   events of the source but does not reproduce the manga's or anime's dialogue.
 - The artwork is AI-generated (GPT Image) from original written descriptions; it does not copy the manga's
   or anime's drawings. Mahjong tile faces are drawn in code and the sound effects are synthesised.
+- The voices are synthesised with Microsoft Edge's neural text-to-speech voices. They are not the anime's
+  voice actors and do not imitate them.
 - No official artwork, music or footage is included. Please keep it that way if you share the game.
 
 *Akagi* © Nobuyuki Fukumoto / Takeshobo. This project is a fan work and is not affiliated with or endorsed
@@ -64,7 +69,7 @@ Only the files needed to play:
 | `index.html` | the page that starts the game |
 | `css/` | styles |
 | `js/` | the game: mahjong rules and computer players in `js/mahjong/`, story and stage scripts in `js/data/`, screens in `js/ui/` and `js/story/` |
-| `assets/` | backgrounds, portraits, interface pieces and skill effects |
+| `assets/` | backgrounds, portraits, interface pieces, skill effects, and the voice recordings in `assets/voice/` |
 
 ---
 
@@ -78,11 +83,11 @@ Only the files needed to play:
 - **离线游玩**——下载本仓库（*Code → Download ZIP*），解压后用浏览器打开 `index.html` 即可，无需安装，也不需要联网。
 - **内容**——故事模式第一章《暴风雨之夜》；对战模式两关（过一关开启下一关）；抉择场景会摆出真实手牌，并分析每一张牌的
   走向（是否听牌、听哪些牌、打点、危险度），配有文字和语音解说；每场对局从一个来自故事的开局抉择开始；
-  技能与怒气槽；三种类型的对手（进攻型、协作型、独立型）。
+  技能与怒气槽；三种类型的对手（进攻型、协作型、独立型）；所有角色台词均有中、日、英三语配音，每个角色的声音按年龄和性格挑选。
 - **不会打麻将？** 标题画面里有五分钟入门的“游戏说明”。
 - **尚未实现**——杠、赤宝牌、途中流局、流局满贯、一炮多响。
 
-故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，未使用任何官方素材。
+故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，配音由微软 Edge 神经网络语音合成，并非动画声优，未使用任何官方素材。
 《アカギ》© 福本伸行／竹书房。本作为同人作品，与版权方无任何关联。
 
 ## 日本語
@@ -98,9 +103,9 @@ Only the files needed to play:
 - **内容**——ストーリーモード第一章「嵐の夜」。対局モードは二ステージ（クリアすると次が開きます）。決断の場面では
   実際の手牌が卓に並び、どの牌を切るとどうなるか（テンパイかどうか、待ち、打点、危険度）が文字と音声の解説つきで
   示されます。各対局は物語の一場面——開局の決断——から始まります。スキルと怒気ゲージ、三タイプの相手
-  （攻撃型・連携型・単独型）。
+  （攻撃型・連携型・単独型）。登場人物のセリフはすべて日・中・英の三言語でボイスつき。声は年齢と人柄に合わせて一人ずつ選んでいます。
 - **麻雀が初めての方へ**——タイトル画面に、五分でわかる「遊び方」があります。
 - **未実装**——カン、赤ドラ、途中流局、流し満貫、ダブロン。
 
-ストーリーの文章は本作のために書き下ろした再話で、絵は独自の文章による説明から AI が生成したものです。公式の素材は
-一切使用していません。『アカギ』© 福本伸行／竹書房。本作はファン作品であり、権利者とは一切関係ありません。
+ストーリーの文章は本作のために書き下ろした再話で、絵は独自の文章による説明から AI が生成したものです。ボイスは
+Microsoft Edge のニューラル音声合成によるもので、アニメの声優ではありません。公式の素材は一切使用していません。『アカギ』© 福本伸行／竹書房。本作はファン作品であり、権利者とは一切関係ありません。

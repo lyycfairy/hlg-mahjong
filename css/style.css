@@ -422,6 +422,13 @@ h1, h2, h3, p { margin: 0; }
 .log-line span { grid-column: 2; color: #d2cec4; }
 .log-line.think span { font-style: italic; color: #9fabb9; }
 .log-line.choice span { color: var(--gold); }
+.log-line { position: relative; padding-right: 34px; }
+.log-replay {
+  position: absolute; right: 0; top: 6px; width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.05);
+  color: var(--gold); font-size: 11px; line-height: 1; padding: 0;
+}
+.log-replay:hover { background: var(--red); color: #fff; border-color: var(--red-bright); }
 .log-close { margin-top: 16px; text-align: center; color: var(--muted); font-family: var(--sans); font-size: 13px; }
 
 /* ==========================================================================
