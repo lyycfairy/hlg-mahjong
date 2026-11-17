@@ -14,13 +14,24 @@
  *   insight  the player sees every opponent's hand for what it is: who is
  *            ready and exactly which tiles deal in
  *   flow     the player's next three draws are the best tiles left in the wall
+ *   sleight  (Sleight of Hand) on his own turn the player swaps a tile in his hand
+ *            for any tile lying in a pond. It does not wait for a full gauge:
+ *            each swap costs DEFS.sleight.cost, so a full gauge is four swaps.
+ *            The human fires it through board.swap(); computer players never do.
+ *
+ * A watching Insight ({ skill: 'insight', watch: seat }) keeps its eye on one
+ * player. It is not fired by choice: it goes off by itself at the start of the
+ * owner's turn once the gauge is full and the watched player is ready. For the
+ * rest of that hand the owner cannot throw a tile the watched player is waiting
+ * on - the round refuses such a discard, and if the owner is in riichi and
+ * draws one, the wall hands him another tile instead.
  *
  * The board also carries two story effects that are not skills:
  *   sense(seat, target)      seat permanently reads target's waits whenever target is in riichi
  *   underrate(seats, target) for the current hand, `seats` do not take `target` seriously
  *
- * Nothing here invents or removes tiles: `flow` only changes the order of
- * the wall, so the 136 tiles always add up.
+ * Nothing here invents or removes tiles: `flow` and the watching Insight only
+ * change the order of the wall, so the 136 tiles always add up.
  */
 (function (root) {
   'use strict';
@@ -35,6 +46,7 @@
   const DEFS = {
     insight: { id: 'insight' },
     flow: { id: 'flow', draws: 3 },
+    sleight: { id: 'sleight', cost: 25 },
   };
 
   class SkillBoard {
@@ -42,7 +54,7 @@
     constructor(seats) {
       this.seats = [0, 1, 2, 3].map(s => {
         const c = seats && seats[s];
-        return c && c.skill ? { skill: c.skill, gauge: Math.min(MAX, c.gauge || 0) } : null;
+        return c && c.skill ? { skill: c.skill, gauge: Math.min(MAX, c.gauge || 0), watch: c.watch != null ? c.watch : null } : null;
       });
       this.senses = [[], [], [], []];     // permanent: seat -> targets read while they are in riichi
       this.used = [0, 0, 0, 0];
@@ -53,15 +65,22 @@
       this.active = [null, null, null, null];   // skill id in effect this hand
       this.flowLeft = [0, 0, 0, 0];
       this.ignore = [[], [], [], []];           // seat -> targets it does not take seriously this hand
+      this.swapped = [0, 0, 0, 0];              // Sleight of Hand swaps made this hand
     }
 
     skillOf(seat) { return this.seats[seat] ? this.seats[seat].skill : null; }
+    /** the player a watching Insight keeps its eye on, or null */
+    watchOf(seat) { return this.seats[seat] && this.seats[seat].skill === 'insight' ? this.seats[seat].watch : null; }
     gauge(seat) { return this.seats[seat] ? this.seats[seat].gauge : 0; }
-    ready(seat) { return !!this.seats[seat] && this.seats[seat].gauge >= MAX && !this.active[seat]; }
+    /** gauge a single use takes: all of it, except for a skill with a cost of its own */
+    cost(seat) { const d = this.seats[seat] && DEFS[this.seats[seat].skill]; return (d && d.cost) || MAX; }
+    ready(seat) { return !!this.seats[seat] && this.seats[seat].gauge >= this.cost(seat) && !this.active[seat]; }
+    /** uses left in the gauge (Sleight of Hand) */
+    usesLeft(seat) { return this.seats[seat] ? Math.floor(this.seats[seat].gauge / this.cost(seat)) : 0; }
 
     /** give a seat a skill (or replace it) - used by story consequences */
-    grant(seat, skill, gauge) {
-      this.seats[seat] = { skill, gauge: Math.min(MAX, gauge || 0) };
+    grant(seat, skill, gauge, watch) {
+      this.seats[seat] = { skill, gauge: Math.min(MAX, gauge || 0), watch: watch != null ? watch : null };
     }
 
     add(seat, amount) {
@@ -104,16 +123,48 @@
       }
     }
 
+    /** tile types `seat` may not throw right now: what the player he watches is waiting on */
+    guarded(round, seat) {
+      const w = this.watchOf(seat);
+      if (w == null || this.active[seat] !== 'insight' || round.players[w].hand.length % 3 !== 1) return [];
+      return round.waitsOf(w);
+    }
+
     /** called by the round before a player acts: computer players fire their skill here */
     async turnStart(round, seat, opts) {
+      if (this.watchOf(seat) != null) {
+        // a watching Insight is not the owner's to time: it fires when the watched player is ready
+        if (this.ready(seat) && round.waitsOf(this.watchOf(seat)).length) await this.activate(round, seat);
+        this.guard(round, seat, opts);
+        return;
+      }
       if (!this.ready(seat)) return;
       const agent = round.agents[seat];
       if (!agent || !agent.wantsSkill) return;       // the human fires through the interface
       if (agent.wantsSkill(round, seat, this.skillOf(seat), opts)) await this.activate(round, seat);
     }
 
+    /**
+     * Sleight of Hand: swap `handId` from `seat`'s hand for the pond tile `tileId` thrown by `pondSeat`.
+     * Only on that player's own turn (the interface asks), never in riichi. The first swap of a
+     * hand is announced as the skill firing (the cut-in); every swap is announced as { type: 'swap' }.
+     */
+    async swap(round, seat, handId, pondSeat, tileId) {
+      if (this.skillOf(seat) !== 'sleight' || !this.ready(seat) || round.players[seat].riichi) return false;
+      const there = round.players[seat].hand.indexOf(handId) >= 0 &&
+        round.players[pondSeat].discards.some(d => d.tile === tileId && !d.called);
+      if (!there) return false;
+      if (!this.swapped[seat]) await round.emit({ type: 'skill', seat, skill: 'sleight' });
+      round.swapWithPond(seat, handId, pondSeat, tileId);
+      this.seats[seat].gauge -= this.cost(seat);
+      this.swapped[seat]++;
+      this.used[seat]++;
+      await round.emit({ type: 'swap', seat, out: handId, in: tileId, from: pondSeat });
+      return true;
+    }
+
     async activate(round, seat) {
-      if (!this.ready(seat)) return false;
+      if (!this.ready(seat) || this.skillOf(seat) === 'sleight') return false;
       const skill = this.seats[seat].skill;
       this.seats[seat].gauge = 0;
       this.active[seat] = skill;
@@ -121,6 +172,37 @@
       if (skill === 'flow') this.flowLeft[seat] = DEFS.flow.draws;
       await round.emit({ type: 'skill', seat, skill });
       return true;
+    }
+
+    /**
+     * Tell the round which tiles `seat` may not throw this turn (opts.guard) and drop them from its
+     * riichi choices. A player in riichi has to throw what he drew, so if that is one of them, he
+     * draws another: the tile goes back into the wall in exchange for the nearest one that is safe
+     * (or, failing that, one of the dead-wall tiles that are never used, since there is no kan).
+     */
+    guard(round, seat, opts) {
+      const types = this.guarded(round, seat);
+      opts.guard = types;
+      if (!types.length) return;
+      const bad = id => types.indexOf(typeOf(id)) >= 0;
+      opts.riichiDiscards = opts.riichiDiscards.filter(id => !bad(id));
+      const p = round.players[seat];
+      if (!p.riichi || p.drawn == null || opts.canTsumo || !bad(p.drawn)) return;
+      let from = round.wall, i = -1;
+      for (let k = round.wall.length - 1; k >= 0; k--) if (!bad(round.wall[k])) { i = k; break; }
+      if (i < 0) {
+        from = round.deadWall;
+        for (let k = round.deadWall.length - 1; k >= 2; k--) if (!bad(round.deadWall[k])) { i = k; break; }
+      }
+      if (i < 0) return;
+      const old = p.drawn;
+      p.hand[p.hand.indexOf(old)] = from[i];
+      p.drawn = from[i];
+      from[i] = old;
+      p.hand.sort((a, b) => a - b);
+      const win = round.tsumoResult(seat);
+      opts.canTsumo = !!win;
+      opts.tsumoResult = win;
     }
 
     /** `flow`: bring the most useful tile left in the wall to the top */
@@ -160,7 +242,7 @@
 
   /**
    * Apply the consequences of a story decision to a board:
-   *   { grant: { seat, skill, gauge } }   { gauge: { seat, set | add } }
+   *   { grant: { seat, skill, gauge, watch } }   { gauge: { seat, set | add } }
    *   { underrate: { seats, target } }    { sense: { seat, target } }
    * Returns what happened, for the interface to announce.
    */
@@ -168,8 +250,9 @@
     const notices = [];
     for (const e of effects || []) {
       if (e.grant) {
-        board.grant(e.grant.seat, e.grant.skill, e.grant.gauge);
-        notices.push({ type: 'grant', seat: e.grant.seat, skill: e.grant.skill });
+        board.grant(e.grant.seat, e.grant.skill, e.grant.gauge, e.grant.watch);
+        if (e.grant.watch != null) notices.push({ type: 'grantWatch', seat: e.grant.seat, skill: e.grant.skill, target: e.grant.watch });
+        else notices.push({ type: 'grant', seat: e.grant.seat, skill: e.grant.skill });
       } else if (e.gauge) {
         const before = board.gauge(e.gauge.seat);
         if (e.gauge.set != null) board.add(e.gauge.seat, e.gauge.set - before);

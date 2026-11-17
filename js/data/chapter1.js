@@ -170,7 +170,7 @@
         '戸口に、少年が立っていた。全身ずぶ濡れで、足もとには水たまりができている。どう見ても、十三より上ではない。',
         '门口站着一个少年，浑身湿透，脚边积了一滩水。怎么看，也不会超过十三岁。') },
       { show: 'thug', at: 'right', face: 'sneer' },
-      { who: 'thug', text: L(
+      { who: 'thug', emo: 'irritated', text: L(
         'Hey. Who let a kid in here? This isn\'t a candy shop. Get lost.',
         'おい。誰だ、ガキを入れたのは。ここは駄菓子屋じゃねえぞ。失せな。',
         '喂。谁把小鬼放进来的？这儿可不是糖果铺。滚。') },
@@ -431,7 +431,7 @@
         '立直、自摸、断幺九、平和、宝牌二。跳满——一万二千点，其中一半出自庄家的腰包。') },
       { table: false },
       { show: 'thug', at: 'right', face: 'angry' },
-      { who: 'thug', text: L(
+      { who: 'thug', emo: 'irritated', text: L(
         'Tch. The corpse twitched.',
         'チッ。死体がピクリと動きやがった。',
         '啧。尸体还抽了一下。') },
@@ -531,13 +531,13 @@
         'ゲームを知る必要はない。相手が待ってるかどうか、それが見えればいい。',
         '我不需要懂这个游戏。只要看得出一个人什么时候在等牌，就够了。') },
       { text: L(
-        'INSIGHT - Akagi\'s skill. His rage gauge fills as he draws, calls, wins or gets hit. When it is full he can see through the table for the rest of that hand: who is ready, on which tiles, and which of his own would deal in.',
-        '【看破】アカギのスキル。ツモる、鳴く、アガる、振り込む——そのたびに怒気ゲージが溜まる。満タンになれば、その局のあいだ卓を見通せる。誰がテンパイか、何を待っているか、手牌のどれが当たり牌か。',
-        '【洞察】赤木的技能。摸牌、鸣牌、和牌、放铳——每一次都会积累怒气槽。蓄满之后，在这一局内可以看穿牌桌：谁在听牌、听什么牌、自己手里哪些牌会放铳。') },
+        'RAGE AND SKILLS - Some players carry a skill and a rage gauge, which fills as they draw, call, win or get hit. A full gauge fires the skill. Tonight Akagi has none: only his eyes, and his nerve.',
+        '【怒気とスキル】スキルと怒気ゲージを持つ打ち手がいる。ゲージはツモる、鳴く、アガる、振り込む——そのたびに溜まり、満タンになるとスキルが発動する。今夜のアカギには、それがない。あるのは、その目と度胸だけだ。',
+        '【怒气与技能】有些牌手身怀技能和怒气槽。摸牌、鸣牌、和牌、放铳——每一次都会积累怒气，蓄满时技能就会发动。今晚的赤木没有技能，他只有一双眼睛和一副胆量。') },
       { text: L(
-        'He is not the only one. Some of the men across the table carry a gauge of their own.',
-        'それはアカギだけのものではない。卓の向こうにも、自分のゲージを持つ男がいる。',
-        '而这并不是他一个人的东西。牌桌对面，也有人带着自己的怒气槽。') },
+        'The men across the table are another matter. Give Ryuzaki a reason, and he will start keeping a gauge of his own.',
+        'だが、卓の向こうの男たちは別だ。竜崎に理由を与えれば、あの男は自分のゲージを燃やしはじめる。',
+        '但牌桌对面的人就不一样了。只要给龙崎一个理由，他就会燃起自己的怒气槽。') },
 
       { label: 'briefing' },
       { bg: 'parlor' },
@@ -609,11 +609,11 @@
         '最後の一局が終わった。点棒は二度、数え直された。結果は変わらなかった。',
         '最后一局结束了。点数清点了两遍。结果没有变。') },
       { show: 'thug', at: 'right', face: 'stunned' },
-      { who: 'thug', text: L(
+      { who: 'thug', emo: 'shock', text: L(
         'This — this can\'t be right. He learned the rules an hour ago!',
         'こ、こんな馬鹿な……！　こいつ、一時間前にルールを覚えたばかりだぞ！',
         '这、这不可能……！这小子一个小时前才学会规则！') },
-      { branch: 'opening', to: { ron: 'win_ron', pass: 'win_pass', '*': 'win_common' } },
+      { branch: 'opening', to: { ron: 'win_ron', '*': 'win_common' } },
 
       /* he took the cheap win in the first hand */
       { label: 'win_ron' },
@@ -624,18 +624,6 @@
         '最初の一局から、こいつは目の前に出たものを、きっちり取りやがった。欲もなければ、怯えもない。触る牌を残らず見てたってのに、とうとう底が見えなかった。',
         '从第一局起，他就只拿摆在眼前的东西。不贪，也不怕。他摸的每一张牌我都盯着，可到最后也没看见他的底。') },
       { goto: 'win_common' },
-
-      /* he let the cheap win go and was taken for a fool */
-      { label: 'win_pass' },
-      { who: 'thug', text: L(
-        'That first hand… he let my man\'s tile go. On purpose. He was never playing us at all - only the boss.',
-        'あの最初の局……こいつ、うちの若いのの牌を見逃しやがった。わざとだ。俺たちなんざ最初から相手にしてねえ——狙いは兄貴だけだった。',
-        '第一局那张……他放过了我们小弟的牌。是故意的。他从一开始就没把我们放在眼里——目标只有大哥。') },
-      { show: 'akagi', at: 'center', face: 'smirk' },
-      { who: 'akagi', emo: 'smirk', text: L(
-        'You called me a pigeon. I was grateful for that.',
-        'カモだって言ってくれたよね。あれは、ありがたかった。',
-        '你们说我是肥羊。我可是很感激的。') },
 
       { label: 'win_common' },
       { hide: 'all' },
@@ -658,17 +646,33 @@
         '…Sharp kid.',
         '……切れるガキだ。',
         '……脑子挺灵的小鬼。') },
-      { who: 'ryuzaki', emo: 'threat', face: 'smug', text: L(
-        'One more game. Double the stakes. And this time you won\'t be playing my boys — I\'m calling in a man who does this for a living.',
-        'もう一勝負だ。レートは倍。それに今度の相手は、うちの若い衆じゃねえ——これで飯を食ってる男を呼ぶ。',
-        '再来一场。赌注加倍。而且这回你的对手不是我的小弟——我要叫一个靠这个吃饭的人来。') },
-      { who: 'ryuzaki', emo: 'command', text: L(
-        'Somebody get Yagi on the telephone.',
-        '誰か、矢木に電話を入れろ。',
-        '来人，给矢木打电话。') },
+      { who: 'ryuzaki', emo: 'command', face: 'smug', text: L(
+        'One more game. Sit down.',
+        'もう一回戦だ。座れ。',
+        '再来一场。坐下。') },
+      { hide: 'nangou' },
+      { show: 'thug', at: 'left', face: 'stunned' },
+      { who: 'thug', emo: 'worried', text: L(
+        'Boss… shouldn\'t we call Yagi?',
+        '兄貴……矢木さんを呼んだほうが……',
+        '大哥……要不要把矢木叫来……') },
+      { fx: 'shake' },
+      { show: 'ryuzaki', face: 'irritated' },
+      { text: L(
+        'Ryuzaki\'s hand cracked across the man\'s face.',
+        '竜崎の平手が、男の頬を打った。',
+        '龙崎一巴掌扇在了他脸上。') },
+      { who: 'ryuzaki', emo: 'irritated', text: L(
+        'Bring in a hired gun to beat one schoolboy? You want me laughed out of this town?',
+        'ガキ一人に代打ちだと？　俺をこの街の笑い者にする気か。',
+        '对付一个小鬼还要请代打？你想让我成为全城的笑柄吗？') },
 
       /* ------------------------------------------------ the knock */
       { hide: 'all' },
+      { text: L(
+        'The second game began. It had reached South 2 when—',
+        '二回戦が始まった。南二局まで進んだ、そのとき——',
+        '第二场开始了。打到南二局的时候——') },
       { fx: 'thunder' },
       { bg: 'doorway' },
       { text: L(
@@ -676,28 +680,28 @@
         '扉を叩く音。鋭く、三度。',
         '有人敲门。短促的三声。') },
       { show: 'yasuoka', at: 'right', face: 'wry' },
-      { who: 'yasuoka', text: L(
+      { who: 'yasuoka', emo: 'sly', text: L(
         'Police. Sorry to interrupt your… social gathering.',
         '警察だ。邪魔して悪いね、その……親睦会の最中に。',
         '警察。抱歉打扰各位的……联谊会。') },
-      { who: 'yasuoka', face: 'neutral', text: L(
+      { who: 'yasuoka', emo: 'flat', face: 'neutral', text: L(
         'I\'m looking for a boy.',
         'ガキをひとり、探してる。',
         '我在找一个少年。') },
       { hide: 'all' },
       { bg: 'pier' },
-      { who: 'yasuoka', text: L(
+      { who: 'yasuoka', emo: 'sly', text: L(
         'There was a game of chicken down at the pier tonight. Two cars, one cliff, and whoever brakes first loses.',
         '今夜、埠頭でチキンランがあってね。車が二台に、崖がひとつ。先にブレーキを踏んだほうが負けだ。',
         '今晚码头那边有人玩胆小鬼赛车。两辆车，一道悬崖，谁先踩刹车谁就输。') },
-      { who: 'yasuoka', text: L(
+      { who: 'yasuoka', emo: 'amused', text: L(
         'One of them never braked at all. The car went into the sea — and its driver swam away.',
         '片方は、最後までブレーキを踏まなかった。車は海に落ちた——なのに運転してた奴は、泳いで消えちまった。',
         '其中一个，自始至终都没踩刹车。车冲进了海里——开车的人却游走了。') },
       { bg: 'doorway' },
       { show: 'yasuoka', at: 'right', face: 'suspicious' },
       { show: 'akagi', at: 'left', face: 'calm' },
-      { who: 'yasuoka', text: L(
+      { who: 'yasuoka', emo: 'sly', text: L(
         'Funny thing. He would be just about that one\'s age.',
         '妙な話でね。ちょうど、そこの坊やくらいの年頃なんだ。',
         '说来也怪。年纪正好跟那边那位差不多。') },
@@ -713,22 +717,15 @@
         '但那一夜第一次，少年的嘴角微微扬了起来。') },
       { hide: 'all' },
       { bg: 'black' },
-      { card: L('To be continued', 'つづく', '未完待续'), sub: L('Chapter 2 · The Substitute', '第二章・代打ち', '第二章·代打') },
+      { card: L('To be continued', 'つづく', '未完待续'), sub: L('Chapter 2 · Sleight of Hand', '第二章・すり替え', '第二章·掉包') },
       { end: true, completed: true },
     ],
   };
 
-  const chapter2 = {
-    id: 'ch2',
-    no: 2,
-    title: L('The Substitute', '代打ち', '代打'),
-    summary: L(
-      'A detective at the door, and a professional at the table.',
-      '戸口には刑事、卓には玄人。',
-      '门口站着刑警，牌桌上坐着职业高手。'),
-    available: false,
-    script: [],
+  // later chapters live in their own files (chapter2.js ...) and add themselves with Story.add
+  root.Story = {
+    chapters: [chapter1],
+    get(id) { return this.chapters.find(c => c.id === id); },
+    add(...chapters) { this.chapters.push(...chapters); },
   };
-
-  root.Story = { chapters: [chapter1, chapter2], get: id => [chapter1, chapter2].find(c => c.id === id) };
 })(window);

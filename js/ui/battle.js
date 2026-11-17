@@ -7,7 +7,8 @@
  * A stage may open in the middle of its first hand, at a decision from the
  * story (stage.opening): the player is shown the hand, what each choice leads
  * to and a commentary on it, and the choice changes the rest of the match -
- * `opening` in the result is the id of the option taken.
+ * `opening` in the result is the id of the option taken. An opening with `auto`
+ * is a scripted moment instead: its scene plays and the story answers for the player.
  *
  * Players with a skill carry a rage gauge (js/mahjong/skills.js); a full
  * gauge lets the skill fire, with a cut-in (js/ui/cutin.js).
@@ -62,7 +63,9 @@
         scores: st.scores,
         firstDealer: st.firstDealer,
         startWind: st.startWind,
+        startKyoku: st.startKyoku || 0,
         endWind: st.endWind,
+        maxHands: st.hands || undefined,
         skills: this.board,
         setup: this.opening ? dealer => Scenario.build(Object.assign({ dealer }, this.opening.scenario)) : null,
         onEvent: (e, r) => this.onEvent(e, r),
@@ -208,6 +211,11 @@
         fn(ov.dataset.ov);
         return;
       }
+      const pondTile = e.target.closest('.b-pond .tile.can');
+      if (pondTile && this.mode === 'sleight-pond') {
+        this.sleightSwap(+pondTile.closest('.b-pond').dataset.seat, +pondTile.dataset.id);
+        return;
+      }
       const tile = e.target.closest('.b-hand .tile');
       if (tile && tile.dataset.id != null) this.onTileClick(+tile.dataset.id);
     }
@@ -240,7 +248,7 @@
       if (pend.kind === 'turn') {
         if (act === 'tsumo' && pend.opts.canTsumo) this.resolvePending({ type: 'tsumo' });
         else if (act === 'riichi' && pend.opts.riichiDiscards.length) { this.mode = 'riichi'; this.selected = null; this.render(); }
-        else if (act === 'cancel') { this.mode = 'discard'; this.selected = null; this.render(); }
+        else if (act === 'cancel') { this.mode = 'discard'; this.selected = null; this.sleightOut = null; this.render(); }
         else if (act === 'skip') this.resolvePending({ type: 'discard', tile: this.round.players[0].drawn, riichi: false });
         else if (act === 'skill') this.useSkill();
       } else if (pend.kind === 'call') {
@@ -254,6 +262,8 @@
     canDiscard(id) {
       const pend = this.pending;
       if (!pend || pend.kind !== 'turn') return false;
+      if (this.mode === 'sleight') return true;          // any tile may be swapped out
+      if (this.mode === 'sleight-pond') return id === this.sleightOut;
       const p = this.round.players[0];
       if (p.riichi) return id === p.drawn;
       if (this.mode === 'riichi') return pend.opts.riichiDiscards.indexOf(id) >= 0;
@@ -261,6 +271,14 @@
     }
 
     onTileClick(id) {
+      if (this.mode === 'sleight' || this.mode === 'sleight-pond') {
+        // first the tile to give away (click it again to choose another)
+        this.sleightOut = this.sleightOut === id ? null : id;
+        this.selected = this.sleightOut;
+        this.mode = this.sleightOut == null ? 'sleight' : 'sleight-pond';
+        this.render();
+        return;
+      }
       if (!this.canDiscard(id)) return;
       if (this.pointerType !== 'mouse' && this.selected !== id) {
         this.selected = id; // touch: first tap lifts the tile, second tap discards
@@ -288,20 +306,15 @@
     humanAgent() {
       return {
         onTurn: (round, seat, opts) => {
-          const p = round.players[0];
           if (this.openingStage === 'pending') {
             if (this.opening.kind === 'discard') return this.openingDiscard(round, opts);
-            this.openingStage = 'done';      // the scripted discard never came; play on normally
+            this.openingStage = 'done';      // a scene opening, or the scripted discard never came
+            if (this.opening.kind === 'scene' && this.opening.intro) {
+              this.render();
+              return this.scene(this.opening.intro).then(() => this.playerTurn(round, opts));
+            }
           }
-          if (p.riichi && !opts.canTsumo) {
-            return this.wait(520).then(() => ({ type: 'discard', tile: p.drawn, riichi: false }));
-          }
-          return new Promise(resolve => {
-            this.pending = { kind: 'turn', opts, resolve };
-            this.mode = 'discard';
-            this.tenpaiMap = p.riichi ? {} : round.tenpaiDiscards(0);
-            this.render();
-          });
+          return this.playerTurn(round, opts);
         },
         onCall: (round, seat, opts) => {
           if (this.openingStage === 'pending' && this.opening.kind === 'call' && opts.canRon) return this.openingCall(round, opts);
@@ -313,14 +326,54 @@
       };
     }
 
+    /** wait for the player's discard (or tsumo) */
+    playerTurn(round, opts) {
+      const p = round.players[0];
+      if (p.riichi && !opts.canTsumo) {
+        return this.wait(520).then(() => ({ type: 'discard', tile: p.drawn, riichi: false }));
+      }
+      return new Promise(resolve => {
+        this.pending = { kind: 'turn', opts, resolve };
+        this.mode = 'discard';
+        this.tenpaiMap = p.riichi ? {} : round.tenpaiDiscards(0);
+        this.render();
+      });
+    }
+
     /* ---- skills ----------------------------------------------------- */
 
     /** fire the player's skill (a full gauge is needed) */
     async useSkill() {
       if (this.busy || !this.board.ready(0)) return;
+      if (this.board.skillOf(0) === 'sleight') {
+        this.mode = 'sleight'; this.sleightOut = null; this.selected = null;
+        this.render();
+        return;
+      }
       this.busy = true;
       await this.board.activate(this.round, 0);     // the engine announces it; onEvent plays the cut-in
       this.busy = false;
+      this.render();
+    }
+
+    /** Sleight of Hand: the hand tile has been chosen, now the pond tile - swap them */
+    async sleightSwap(pondSeat, tileId) {
+      const out = this.sleightOut;
+      const pend = this.pending;
+      if (out == null || !pend || pend.kind !== 'turn' || this.busy) return;
+      this.busy = true;
+      const done = await this.board.swap(this.round, 0, out, pondSeat, tileId);
+      this.busy = false;
+      this.mode = 'discard'; this.sleightOut = null; this.selected = null;
+      if (done) {
+        // the hand has changed: what the player may now declare has too
+        const r = this.round;
+        const win = r.tsumoResult(0);
+        pend.opts.canTsumo = !!win;
+        pend.opts.tsumoResult = win;
+        pend.opts.riichiDiscards = r.riichiDiscards(0);
+        this.tenpaiMap = r.tenpaiDiscards(0);
+      }
       this.render();
     }
 
@@ -377,7 +430,7 @@
           if (l.who) Voice.line(l.who, P(l.text)); else Voice.stop();
           for (const n of lines.slice(i, i + 2)) if (n.who) Voice.preload(n.who, P(n.text));
           if (l.note) {
-            box.innerHTML = `<div class="scene-line note"><div class="scene-body"><p>${esc(l.note)}</p></div><span class="scene-next">▼</span></div>`;
+            box.innerHTML = `<div class="scene-line note"><div class="scene-body"><p>${esc(P(l.note))}</p></div><span class="scene-next">▼</span></div>`;
             return;
           }
           const who = l.who ? Characters[l.who] : null;
@@ -410,6 +463,13 @@
       const op = this.opening;
       this.render();
       await this.scene(op.intro);
+      if (op.auto) {
+        // a scripted moment: the story answers for the player
+        const option = op.options.find(o => o.id === op.auto);
+        await this.scene(option.note);
+        await this.resolveOpening(option);
+        return { type: option.id === 'ron' ? 'ron' : 'pass' };
+      }
       const view = Analysis.viewOfRound(round, 0);
       const quiet = Analysis.tenpai(view, view.hand, false);
       const loud = view.canRiichi ? Analysis.tenpai(view, view.hand, true) : null;
@@ -499,12 +559,19 @@
           this.lastDiscard = null;
           this.render();
           break;
-        case 'skill':
+        case 'skill': {
           this.render();
           Voice.shout(this.voiceOf(evt.seat), evt.skill);
           await this.cutin(evt.seat, evt.skill);
           this.render();
+          // a watching Insight goes off by itself: say what it does the first time
+          const watch = this.board.watchOf(evt.seat);
+          if (watch != null && !this._watchExplained) {
+            this._watchExplained = true;
+            await this.scene([{ note: T('note.watchFires', { name: this.name(evt.seat), target: this.name(watch) }) }]);
+          }
           break;
+        }
         case 'deal': {
           this.render();
           let sub = T('b.dealer', { name: this.name(round.dealer) });
@@ -544,6 +611,12 @@
           if (evt.result.winner === 0) Sfx.win(); else Sfx.lose();
           Voice.call(this.voiceOf(evt.result.winner), evt.result.tsumo ? 'tsumo' : 'ron');
           await this.bubble(evt.result.winner, T(evt.result.tsumo ? 'call.tsumo' : 'call.ron'), 1100);
+          break;
+        case 'swap':
+          this.lastDiscard = { seat: evt.from, tile: evt.out };
+          this.render();
+          Sfx.tile();
+          await this.wait(320);
           break;
         case 'exhaustive':
           this.render();
@@ -656,7 +729,10 @@
       const cls = active ? 'active' : (this.board.ready(seat) ? 'ready' : '');
       let label = T('skill.' + skill);
       if (active === 'flow' && this.board.flowLeft[seat] > 0) label += ' ×' + this.board.flowLeft[seat];
-      return `<div class="gauge ${cls}" title="${esc(T('gauge.tip', { skill: T('skill.' + skill), desc: T('skill.' + skill + '.desc') }))}">` +
+      if (skill === 'sleight') label += ' ×' + this.board.usesLeft(seat);
+      const watch = this.board.watchOf(seat);
+      const desc = watch != null ? T('skill.insight.watch', { target: this.name(watch) }) : T('skill.' + skill + '.desc');
+      return `<div class="gauge ${cls}" title="${esc(T('gauge.tip', { skill: T('skill.' + skill), desc }))}">` +
         `<span class="gauge-icon skill-${skill}"></span>` +
         `<span class="gauge-bar"><i style="--g:${active ? 100 : g}"></i></span>` +
         `<span class="gauge-label">${esc(label)}</span></div>`;
@@ -671,6 +747,7 @@
         let cls = 'pt';
         if (d.riichi || carryRiichi) { cls += ' sideways'; carryRiichi = false; }
         if (this.lastDiscard && this.lastDiscard.tile === d.tile) cls += ' last';
+        if (this.mode === 'sleight-pond' && this.pending) cls += ' can';
         cells.push(TileView.html(d.tile, cls));
       }
       const rows = [cells.slice(0, 6), cells.slice(6, 12), cells.slice(12)];
@@ -705,6 +782,7 @@
         const t = typeOf(id);
         let cls = 'hd';
         if (myTurn) cls += this.canDiscard(id) ? ' can' : ' dim';
+        if (this.mode === 'sleight-pond' && id === this.sleightOut) cls += ' swap-out';
         if (id === p.drawn) cls += ' drawn';
         if (this.selected === id) cls += ' sel';
         if (this._read && this._read.danger.has(t)) cls += ' danger';
@@ -720,14 +798,14 @@
       const button = (cls, act, label, extra) => `<button class="btn ${cls}" data-act="${act}" ${extra || ''}>${label}</button>`;
       let acts = '';
       if (pend && pend.kind === 'turn') {
-        if (this.mode === 'riichi') {
+        if (this.mode === 'riichi' || this.mode === 'sleight' || this.mode === 'sleight-pond') {
           acts += button('', 'cancel', esc(T('act.cancel')));
         } else {
           if (pend.opts.canTsumo) acts += button('btn-win', 'tsumo', esc(T('act.tsumo')));
           if (pend.opts.riichiDiscards.length) acts += button('btn-riichi', 'riichi', esc(T('act.riichi')));
           if (p.riichi && pend.opts.canTsumo) acts += button('', 'skip', esc(T('act.pass')));
           const skill = this.board.skillOf(0);
-          if (skill && this.board.ready(0) && !(skill === 'insight' && p.riichi)) {
+          if (skill && this.board.ready(0) && !((skill === 'insight' || skill === 'sleight') && p.riichi)) {
             acts += button('btn-skill', 'skill', `<span class="gauge-icon skill-${skill}"></span>` + esc(T('act.skill', { skill: T('skill.' + skill) })),
               `title="${esc(T('skill.' + skill + '.desc'))}"`);
           }
@@ -775,7 +853,11 @@
       } else if (pend && pend.kind === 'turn') {
         const hov = this.hoverType;
         const withTiles = (key, types) => esc(T(key, { tiles: '\u0000' })).replace('\u0000', this.waitsHtml(types));
-        if (this.mode === 'riichi') {
+        if (this.mode === 'sleight') {
+          html = esc(T('hint.sleightHand', { n: this.board.usesLeft(0) }));
+        } else if (this.mode === 'sleight-pond') {
+          html = esc(T('hint.sleightPond'));
+        } else if (this.mode === 'riichi') {
           html = esc(T('hint.riichiChoose'));
           if (hov != null && this.tenpaiMap[hov]) html += withTiles('hint.riichiWaits', this.tenpaiMap[hov]);
         } else if (p.riichi) {
@@ -826,8 +908,8 @@
           <div class="goal-box"><span>${esc(T('intro.clear'))}</span>${esc(P(st.goal.text))}</div>
           <table class="score-table intro-table"><caption>${esc(T('intro.start', { round: roundName }))}</caption>${rows}</table>
           <ul class="role-list">${roles}</ul>
-          ${mine ? `<p class="small">${T('intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(T('skill.' + mine + '.desc')) })}</p>` : ''}
-          ${st.opening ? `<p class="small opening-note">${esc(T('intro.opening'))}</p>` : ''}
+          ${mine ? `<p class="small">${T(Skills.DEFS[mine] && Skills.DEFS[mine].cost ? 'intro.skillCost' : 'intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(T('skill.' + mine + '.desc')) })}</p>` : ''}
+          ${st.opening ? `<p class="small opening-note">${esc(T(st.opening.auto || st.opening.kind === 'scene' ? 'intro.openingScene' : 'intro.opening'))}</p>` : ''}
           <button class="btn btn-primary" data-ov="go">${esc(T('intro.go'))}</button>
         </div>`);
     }
@@ -848,7 +930,7 @@
           '<span class="win-gap"></span>' + TileView.html(res.winTile, 'rs win') +
           res.melds.map(m => this.meldHtml(m, 'rs')).join('');
         const yaku = sc.yaku.map(y =>
-          `<li><span>${esc(I18n.yakuName(y))}</span><span>${esc(y.yakuman ? T('res.yakuman') : T('res.han', { n: y.han }))}</span></li>`).join('');
+          `<li><span>${esc(I18n.yakuName(y))}</span><span>${esc(y.yakuman > 1 ? T('limit.multi', { n: y.yakuman }) : y.yakuman ? T('res.yakuman') : T('res.han', { n: y.han }))}</span></li>`).join('');
         const limit = I18n.limitName(sc);
         const total = sc.yakuman ? limit : T('res.hanfu', { han: sc.han, fu: sc.fu }) + (limit ? ' · ' + limit : '');
         let payText;

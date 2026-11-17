@@ -76,12 +76,17 @@
 
     /* ---------------- story ---------------- */
 
+    /** a chapter or stage written only in some languages so far says so in the others */
+    langTag(item) {
+      return item.langs && item.langs.indexOf(I18n.lang) < 0 ? `<span class="tag lang">${esc(T('tag.zhOnly'))}</span>` : '';
+    },
+
     storySelect() {
       App.menu = 'storySelect';
       const cards = Story.chapters.map(c => {
         const done = !!Save.data.chapters[c.id];
-        const state = !c.available ? `<span class="tag locked">${esc(T('tag.soon'))}</span>`
-          : done ? `<span class="tag done">${esc(T('tag.completed'))}</span>` : `<span class="tag open">${esc(T('tag.new'))}</span>`;
+        const state = (!c.available ? `<span class="tag locked">${esc(T('tag.soon'))}</span>`
+          : done ? `<span class="tag done">${esc(T('tag.completed'))}</span>` : `<span class="tag open">${esc(T('tag.new'))}</span>`) + App.langTag(c);
         const banner = c.banner && Assets.has(c.banner) ? `<div class="sel-banner" style="background-image:url('${Assets.url(c.banner)}')"></div>` : '';
         return `
           <article class="sel-card ${c.available ? '' : 'is-locked'}">
@@ -137,6 +142,7 @@
         else if (cleared) state = `<span class="tag done">${esc(T('tag.cleared'))}</span>`;
         else if (unlocked) state = `<span class="tag open">${esc(T('tag.challenge'))}</span>`;
         else state = `<span class="tag locked">${esc(T('tag.locked'))}</span>`;
+        state += App.langTag(s);
         if (s.available && unlocked) {
           action = `<button class="btn btn-primary" data-go="playStage:${s.id}">${esc(T(cleared ? 'btn.playAgain' : 'btn.challenge'))}</button>`;
         }

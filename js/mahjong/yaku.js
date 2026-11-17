@@ -168,7 +168,12 @@
 
       /* yakuman */
       const ym = [];
-      if (menzen && concealedTris === 4) ym.push({ id: 'suuankou', name: 'Suuankou (Four Concealed Triplets)', yakuman: 1 });
+      // waiting on the pair (tanki) is the hardest form, and counts double
+      if (menzen && concealedTris === 4) {
+        ym.push(wait === 'tanki'
+          ? { id: 'suuankou_tanki', name: 'Suuankou Tanki (Four Concealed Triplets, Single Wait)', yakuman: 2 }
+          : { id: 'suuankou', name: 'Suuankou (Four Concealed Triplets)', yakuman: 1 });
+      }
       if (hasTri(31) && hasTri(32) && hasTri(33)) ym.push({ id: 'daisangen', name: 'Daisangen (Big Three Dragons)', yakuman: 1 });
       const windTris = [27, 28, 29, 30].filter(hasTri).length;
       if (windTris === 4) ym.push({ id: 'daisuushii', name: 'Daisuushii (Big Four Winds)', yakuman: 1 });

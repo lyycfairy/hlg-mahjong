@@ -12,27 +12,40 @@
  *                  level   0..1 playing strength
  *                  ally    (collaborator) the seat he plays for;  signal  how reliably they pass signals;
  *                          feed  how readily he gives a big hand to the ally
- *   skills       one entry per seat: { skill: 'insight' | 'flow', gauge: starting rage } or null
+ *   skills       one entry per seat: { skill: 'insight' | 'flow', gauge: starting rage } or null;
+ *                an Insight with watch: seat fires by itself and stops its owner dealing into that seat
+ *                (js/mahjong/skills.js)
  *   opening      the match starts in the middle of its first hand, at a decision taken from
  *                the story. What the player chooses changes what follows:
  *                  scenario  the position (format: js/mahjong/scenario.js)
  *                  forced    seats whose first action is scripted ('drawn' = throw the drawn tile)
  *                  kind      'call'    - answer the first discard: options are 'ron' and 'pass'
  *                            'discard' - choose a discard: options name tiles ('2p', or '*' for the rest)
+ *                  auto      the option the story takes for the player: a scripted event, with no
+ *                            choice and no analysis panel (the option's note and after lines still play)
  *                  prelude   lines shown when the hand appears, before anything moves
  *                  intro     lines shown at the decision, before the choice
  *                  (any line may carry emo: 'preset' - the mood its recorded voice acts; see chapter1.js)
  *                  options   [{ id, label / tiles, note (commentary), after (lines), effects,
  *                              later (lines after the hand ends), laterEffects }]
- *                  effects   { grant: { seat, skill, gauge } }   { gauge: { seat, set | add } }
+ *                  effects   { grant: { seat, skill, gauge, watch } }   { gauge: { seat, set | add } }
  *                            { underrate: { seats, target } }    { sense: { seat, target } }
  *
- * Text is written as L(english, japanese, chinese). All of it is original to this project.
+ *   hands        play only this many hands (the match ends after them)
+ *   startKyoku   hand of the start wind to begin on (0 = the first; South 2 is startWind 1, startKyoku 1)
+ *   langs        the languages a stage has been written in, when not all three (others show it in Chinese)
+ *
+ * The opening `kind` may also be 'scene': no decision - the prelude plays when the hand appears,
+ * the intro when the player's first turn comes, and then the hand is played normally.
+ *
+ * Text is written as L(english, japanese, chinese), or Z(chinese) while a stage exists only in
+ * Chinese. All of it is original to this project.
  */
 (function (root) {
   'use strict';
 
   const L = (en, ja, zh) => ({ en, ja, zh });
+  const Z = zh => ({ zh });          // written in Chinese first; the other languages come later
 
   const N = {
     akagi: L('Akagi', 'アカギ', '赤木'),
@@ -62,7 +75,9 @@
         { style: 'collaborator', level: 0.8, ally: 1, signal: 0.8 },
         { style: 'independent', level: 0.7 },
       ],
-      skills: [{ skill: 'insight', gauge: 40 }, null, null, null],
+      // Akagi plays this one on nerve alone. Ryuzaki starts watching him after the first hand
+      // (see laterEffects below): a watching Insight that keeps him from ever feeding Akagi a win.
+      skills: [null, null, null, null],
       opening: {
         scenario: {
           turn: 3, n: 5, dora: '9m',
@@ -73,6 +88,7 @@
         },
         forced: [{ seat: 3, discard: 'drawn' }],
         kind: 'call',
+        auto: 'ron',          // as in the story: he takes the cheap win on the very first discard
         title: L('The first winning tile', '最初の当たり牌', '第一张和牌'),
         prelude: [
           { text: L(
@@ -125,40 +141,7 @@
                 'いいだろう。ここからは、あのガキが触る牌を、一枚残らず見てやる。',
                 '行。从现在起，那小鬼摸的每一张牌，我都要盯死。') },
             ],
-            laterEffects: [{ grant: { seat: 1, skill: 'insight', gauge: 50 } }],
-          },
-          {
-            id: 'pass',
-            label: L('Let it pass', '見逃す', '放过这张'),
-            note: [
-              { who: 'nangou', emo: 'alarm', face: 'shock', text: L(
-                'Let it go?! Pass it and you cannot call ron again until your next draw - and the five may never come!',
-                '見逃すだと！？　見逃したら、次のツモまでロンはできないんだぞ。それに五筒が出てくる保証なんて、どこにもない！',
-                '放过去？！放过之后，到你下次摸牌之前都不能荣和——而且五筒未必会来！') },
-              { who: 'akagi', emo: 'smirk', face: 'smirk', text: L(
-                'Two thousand from the errand boy changes nothing. The other side of this wait is worth four times as much.',
-                '使い走りから二千点取っても、何も変わらない。この待ちの反対側は、その四倍だ。',
-                '从跑腿的手里拿两千点，什么都改变不了。这个听牌的另一边，值它的四倍。') },
-            ],
-            after: [
-              { text: L(
-                'The boy did not move. The tile lay there, and the turn passed.',
-                '少年は動かなかった。牌はそこに置かれたまま、巡目だけが過ぎた。',
-                '少年没有动。那张牌就躺在那里，这一巡就这样过去了。') },
-              { who: 'nangou', emo: 'alarm', face: 'shock', text: L(
-                'W-what are you doing?! That was your winning tile!',
-                'な、何をしてる！？　今のはお前のアガリ牌だぞ！',
-                '你、你在干什么？！刚才那可是你的和牌！') },
-              { who: 'thug', face: 'sneer', text: L(
-                'Heh. The brat doesn\'t even know when he has won. Relax, boss - he\'s a pigeon.',
-                'へっ。このガキ、自分がアガってることにも気づいてねえ。安心しなよ兄貴、ただのカモだ。',
-                '嘿。这小鬼连自己和了都不知道。放心吧大哥，就是只肥羊。') },
-              { who: 'akagi', emo: 'smirk', face: 'glare', think: true, text: L(
-                'Good. Keep thinking that.',
-                'それでいい。そう思っていてくれ。',
-                '很好。就这么想下去吧。') },
-            ],
-            effects: [{ gauge: { seat: 0, add: 30 } }, { underrate: { seats: [1, 2, 3], target: 0 } }],
+            laterEffects: [{ grant: { seat: 1, skill: 'insight', gauge: 50, watch: 0 } }],
           },
         ],
       },
@@ -176,8 +159,61 @@
       available: true,
     },
     {
-      id: 'yagi',
+      id: 'swap',
       no: 2,
+      langs: ['zh'],
+      title: Z('掉包'),
+      opponent: Z('龙崎和他的手下——门口站着刑警'),
+      blurb: Z('第二场，南二局。刑警闯进了麻将馆，所有人的目光都转向了门口。只有赤木，低头看着牌河。'),
+      names: [N.akagi, N.ryuzaki, N.thug, N.lackey],
+      who: ['akagi', 'ryuzaki', 'thug', 'lackey'],
+      portraits: ['akagi', 'ryuzaki', 'thug', 'thug:angry'],
+      ai: [
+        null,
+        { style: 'aggressor', level: 0.92 },
+        { style: 'collaborator', level: 0.8, ally: 1, signal: 0.8 },
+        { style: 'independent', level: 0.7 },
+      ],
+      // the police are in the doorway: for this one hand nobody is watching the tiles
+      skills: [{ skill: 'sleight', gauge: 100 }, null, null, null],
+      hands: 1,
+      opening: {
+        kind: 'scene',
+        scenario: {
+          // Akagi sits on seven pairs, ready on 9s, with a pair of each dragon - and he let every
+          // dragon that was thrown go by. One of each is in the ponds, and so are a 4s and a 7p.
+          turn: 0, n: 7, dora: '2m',
+          hands: { 0: '33m77p449s556677z' },
+          rivers: { 0: '1z9m4z2p8m1s3z' },
+          discarded: { 1: '5z', 2: '6z4s', 3: '7z7p' },
+          draws: ['1p', '9s'],      // his own draw, then the 9s that Ryuzaki draws and throws
+          avoid: '9s',
+        },
+        forced: [{ seat: 1, discard: 'drawn' }],
+        prelude: [
+          { text: Z('第二场，南二局。门口站着刑警。') },
+          { text: Z('谁都不敢出声——在这里赌钱是犯法的。所有人的目光，都钉在门口那个男人身上。') },
+          { who: 'akagi', emo: 'cold', face: 'calm', think: true, text: Z('白板、发财、红中……手里各有一对，牌河里也各躺着一张。') },
+        ],
+        intro: [
+          { who: 'akagi', emo: 'smirk', face: 'smirk', think: true, text: Z('现在，没有人在看牌。') },
+          { note: Z('【掉包】轮到你时，可以把手里的任意一张牌，与任意一家牌河里的一张牌互换。每换一次消耗25点怒气——现在可以换四次。本局目标：以三倍役满和牌（大三元＋四暗刻单骑）。') },
+        ],
+      },
+      scores: [26000, 30000, 23000, 21000],
+      firstDealer: 2,
+      startWind: 1,
+      startKyoku: 1,
+      endWind: 1,
+      goal: {
+        text: Z('以三倍役满和牌：大三元＋四暗刻单骑。'),
+        check: final => (final.results || []).some(r => r.type === 'win' && r.winner === 0 && r.score.yakuman >= 3),
+      },
+      available: true,
+    },
+    {
+      id: 'yagi',
+      no: 3,
       title: L('The Substitute', '代打ち', '代打'),
       opponent: L('Yagi, the house professional', '代打ちの玄人・矢木', '职业代打·矢木'),
       blurb: L(
@@ -212,7 +248,7 @@
             'East 1. Yagi had laid a tile sideways without raising his voice.',
             '東一局。矢木は声を張ることもなく、牌を横に置いていた。',
             '东一局。矢木连声音都没抬高，就把一张牌横着放了下去。') },
-          { who: 'yagi', face: 'smile', text: L(
+          { who: 'yagi', emo: 'smirk', face: 'smile', text: L(
             'Riichi. Take your time, boy.',
             'リーチ。ゆっくり考えな、坊や。',
             '立直。慢慢想吧，小弟弟。') },
@@ -287,11 +323,11 @@
                 'The boy\'s hand stopped over the two of circles - and moved on to another tile.',
                 '少年の手は二筒の上で止まり——別の牌へと移った。',
                 '少年的手在二筒上方停住——然后移向了另一张牌。') },
-              { who: 'yagi', face: 'focus', text: L(
+              { who: 'yagi', emo: 'amused', face: 'focus', text: L(
                 '…Hoh. You didn\'t bite.',
                 '……ほう。食いつかなかったか。',
                 '……哦。没上钩啊。') },
-              { who: 'yagi', face: 'focus', think: true, text: L(
+              { who: 'yagi', emo: 'cold', face: 'focus', think: true, text: L(
                 'Not an amateur, then. Enough playing with him.',
                 '素人じゃないな。遊びは、ここまでにしよう。',
                 '看来不是外行。不陪他玩了。') },
@@ -314,17 +350,17 @@
       available: true,
     },
     {
-      id: 'ichikawa', no: 3, available: false,
+      id: 'ichikawa', no: 4, available: false,
       title: L('The Blind Master', '盲目の達人', '盲眼高手'),
       opponent: L('Ichikawa', '市川', '市川'),
     },
     {
-      id: 'urabe', no: 4, available: false,
+      id: 'urabe', no: 5, available: false,
       title: L('The Impostor\'s Table', 'ニセモノの卓', '冒牌货的牌桌'),
       opponent: L('Urabe', '浦部', '浦部'),
     },
     {
-      id: 'washizu', no: 5, available: false,
+      id: 'washizu', no: 6, available: false,
       title: L('The Transparent Tiles', '透明な牌', '透明的牌'),
       opponent: L('Washizu', '鷲巣', '鹫巢'),
     },

@@ -300,12 +300,17 @@
       const counts = Tiles.counts(p.hand.map(typeOf));
       const melds = meldsOf(p);
       const riichiTypes = new Set(opts.riichiDiscards.map(typeOf));
+      // tiles a watching Insight forbids (skills.js) - unless nothing else is left to throw
+      const legal = t => opts.forbidden.indexOf(t) < 0;
+      const guard = opts.guard || [];
+      const elsewhere = p.hand.some(id => legal(typeOf(id)) && guard.indexOf(typeOf(id)) < 0);
+      const allowed = t => legal(t) && !(elsewhere && guard.indexOf(t) >= 0);
 
       const cands = [];
       const done = new Set();
       for (const id of p.hand) {
         const t = typeOf(id);
-        if (done.has(t) || opts.forbidden.indexOf(t) >= 0) continue;
+        if (done.has(t) || !allowed(t)) continue;
         done.add(t);
         counts[t]--;
         const a = inspect(env, counts, melds, riichiTypes.has(t));

@@ -21,6 +21,8 @@ window.AssetManifest = {
   "fx_cutin": "medium",
   "fx_insight": "low",
   "fx_flow": "low",
+  "fx_sleight": "low",
+  "icon_sleight": "medium",
   "fx_eye": "low",
   "fx_bits": "medium"
  },
@@ -241,6 +243,10 @@ window.AssetManifest = {
    372,
    381
   ],
+  "ui/icon_sleight.webp": [
+   1008,
+   1024
+  ],
   "ui/ivory.jpg": [
    512,
    512
@@ -290,6 +296,10 @@ window.AssetManifest = {
    900
   ],
   "fx/insight.jpg": [
+   1600,
+   900
+  ],
+  "fx/sleight.jpg": [
    1600,
    900
   ],

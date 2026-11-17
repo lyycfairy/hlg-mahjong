@@ -14,6 +14,8 @@
  *   rivers   { seat: '1z9m...' }      fixed ponds, in order (required for a fixed hand)
  *   riichi   { seat: index }          discard on which a fixed-hand seat declared riichi
  *   draws    ['8p', ...]              the next tiles to come off the wall, in order
+ *   discarded { seat: '5z' }          tiles a generated seat has already thrown (placed early in its
+ *                                     pond, the rest of the pond is played forward as usual)
  *   avoid    '5p8p'                   types the generated seats never discard (optional)
  *
  * Only what the scene needs is fixed; everything else is dealt from the
@@ -77,6 +79,12 @@
       discards[s] = river.map((tile, i) => ({ tile, riichi: i === at, tsumogiri: at >= 0 && i > at }));
     }
     const draws = (spec.draws || []).map(code => take(Tiles.parse(code)[0]));
+    const thrown = [[], [], [], []];
+    for (const s of Object.keys(spec.discarded || {}).map(Number)) {
+      if (fixed.indexOf(s) >= 0) throw new Error('seat ' + s + ' has a fixed pond: put its tiles in rivers');
+      thrown[s] = takeAll(spec.discarded[s]);
+      if (thrown[s].length > riverLen(s)) throw new Error('seat ' + s + ' cannot have thrown that many tiles yet');
+    }
 
     // ---- the rest is dealt at random -------------------------------------
     const pool = Tiles.shuffle([].concat(...free), rng);
@@ -84,12 +92,14 @@
     for (let s = 0; s < 4; s++) {
       if (hands[s]) continue;
       const hand = pool.splice(0, 13);
-      for (let k = 0; k < riverLen(s); k++) {
+      for (let k = 0; k < riverLen(s) - thrown[s].length; k++) {
         hand.push(pool.pop());
         const out = dropFrom(hand, avoid);
         hand.splice(hand.indexOf(out), 1);
         discards[s].push({ tile: out, riichi: false, tsumogiri: false });
       }
+      // the tiles the scene says he threw go in early, every other discard
+      thrown[s].forEach((tile, i) => discards[s].splice(Math.min(2 * i + 1, discards[s].length), 0, { tile, riichi: false, tsumogiri: false }));
       hands[s] = hand;
     }
 

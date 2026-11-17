@@ -13,7 +13,8 @@
  * Two optional extras, both used by the story:
  *   opts.setup   start in the middle of a hand (see scenario.js for the format)
  *   opts.skills  a SkillBoard (skills.js): it is told when turns start and may
- *                rearrange the next draw for a player whose skill says so
+ *                rearrange the next draw for a player whose skill says so, or forbid
+ *                some discards (turn opts.guard: the tiles a watched player waits on)
  */
 (function (root) {
   'use strict';
@@ -47,7 +48,8 @@
         melds: [],           // { type:'chi'|'pon', tiles:[ids], called:id, from:seat }
         discards: [],        // { tile:id, riichi:bool, called:bool, tsumogiri:bool }
         discardedTypes: new Set(),
-        safe: new Set(),     // types known not to deal into this player
+        safe: new Set(),     // types known not to deal into this player: its own discards, and
+        passed: new Set(),   // ... tiles others threw past its riichi (kept apart, see swapWithPond)
         drawn: null,
         riichi: false, doubleRiichi: false, ippatsu: false,
         riichiFuriten: false, tempFuriten: false,
@@ -214,6 +216,24 @@
       return forbid;
     }
 
+    /**
+     * Sleight of Hand (skills.js): `seat` exchanges a tile in hand for one lying in a pond.
+     * Nobody sees it happen, so the pond simply shows the new tile from now on: its owner's
+     * furiten and safe tiles follow what is in the pond. Throws if either tile is not there.
+     */
+    swapWithPond(seat, handId, pondSeat, tileId) {
+      const p = this.players[seat], q = this.players[pondSeat];
+      const i = p.hand.indexOf(handId);
+      const entry = q.discards.find(d => d.tile === tileId && !d.called);
+      if (i < 0 || !entry) throw new Error('seat ' + seat + ' tried an impossible swap');
+      p.hand[i] = tileId;
+      entry.tile = handId;
+      if (p.drawn === handId) p.drawn = tileId;
+      p.hand.sort(byId);
+      q.discardedTypes = new Set(q.discards.map(d => typeOf(d.tile)));
+      q.safe = new Set([...q.discardedTypes, ...q.passed]);
+    }
+
     hasLegalDiscardAfter(p, usedIds, forbidTypes) {
       return p.hand.some(id => usedIds.indexOf(id) < 0 && forbidTypes.indexOf(typeOf(id)) < 0);
     }
@@ -241,7 +261,7 @@
             this.riichiSticks++;
           }
         }
-        for (const t of (s.safe && s.safe[p.seat]) || []) p.safe.add(t);
+        for (const t of (s.safe && s.safe[p.seat]) || []) { p.safe.add(t); p.passed.add(t); }
         if (s.ippatsu && s.ippatsu[p.seat]) p.ippatsu = true;
       }
       this.turn = s.turn;
@@ -299,8 +319,9 @@
         const action = await this.agents[seat].onTurn(this, seat, turnOpts);
 
         if (action.type === 'tsumo') {
-          if (!tsumoRes) throw new Error('illegal tsumo by seat ' + seat);
-          return this.win(seat, null, p.drawn, tsumoRes, true);
+          const won = turnOpts.tsumoResult;      // not tsumoRes: a skill may have changed the drawn tile
+          if (!won) throw new Error('illegal tsumo by seat ' + seat);
+          return this.win(seat, null, p.drawn, won, true);
         }
 
         /* ---- discard ---- */
@@ -308,6 +329,12 @@
         if (p.hand.indexOf(tile) < 0) throw new Error('seat ' + seat + ' discarded a tile it does not hold');
         if (p.riichi && tile !== p.drawn) throw new Error('seat ' + seat + ' must discard the drawn tile after riichi');
         if (p.forbidden.indexOf(typeOf(tile)) >= 0) throw new Error('seat ' + seat + ' made a kuikae discard');
+        // a watching Insight forbids what the watched player waits on, as long as there is something else to throw
+        const guard = turnOpts.guard || [];
+        if (guard.indexOf(typeOf(tile)) >= 0 && !p.riichi &&
+            p.hand.some(id => guard.indexOf(typeOf(id)) < 0 && p.forbidden.indexOf(typeOf(id)) < 0)) {
+          throw new Error('seat ' + seat + ' threw a tile its Insight forbids');
+        }
         const declaring = !!action.riichi;
         if (declaring && turnOpts.riichiDiscards.indexOf(tile) < 0) throw new Error('illegal riichi by seat ' + seat);
 
@@ -351,7 +378,7 @@
             const q = this.players[s];
             if (q.riichi) q.riichiFuriten = true; else q.tempFuriten = true;
           }
-          if (this.players[s].riichi) this.players[s].safe.add(typeOf(tile));
+          if (this.players[s].riichi) { this.players[s].safe.add(typeOf(tile)); this.players[s].passed.add(typeOf(tile)); }
         }
 
         if (declaring) {
@@ -469,8 +496,9 @@
   class Match {
     /**
      * opts: { agents, scores, firstDealer, startWind, startKyoku, endWind, rng, onEvent,
-     *         setup, skills }
-     * The match ends after the last hand of `endWind`, or when someone goes below zero.
+     *         setup, skills, maxHands }
+     * The match ends after the last hand of `endWind`, when someone goes below zero, or after
+     * `maxHands` hands. The final result lists every hand's result in `results`.
      * `setup` (an object, or a function of the dealer seat returning one) applies to
      * the first hand only; `skills` is a SkillBoard shared by every hand.
      */
@@ -490,6 +518,7 @@
       this.maxHands = opts.maxHands || 40; // safety valve
       this.setup = opts.setup || null;
       this.skills = opts.skills || null;
+      this.results = [];
     }
 
     standings() {
@@ -519,6 +548,7 @@
         await this.onEvent({ type: 'round-start' }, round);
         const res = await round.play();
         this.handsPlayed++;
+        this.results.push(res);
         this.riichiSticks = round.riichiSticks;
 
         let dealerStays;
@@ -554,7 +584,7 @@
       this.riichiSticks = 0;
       const place = [0, 0, 0, 0];
       ranking.forEach((s, i) => { place[s] = i + 1; });
-      const final = { type: 'match-end', scores: this.scores.slice(), ranking, place };
+      const final = { type: 'match-end', scores: this.scores.slice(), ranking, place, results: this.results.slice() };
       await this.onEvent(final, this.round);
       return final;
     }

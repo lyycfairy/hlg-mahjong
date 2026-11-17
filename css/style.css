@@ -291,6 +291,7 @@ h1, h2, h3, p { margin: 0; }
 .tag.done { color: #7fc79a; }
 .tag.done::before { content: '✓ '; }
 .tag.open { color: var(--gold); }
+.tag.lang { margin-left: 10px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 3px; color: #d9a35b; text-transform: none; letter-spacing: 0.02em; }
 
 .howto {
   grid-column: 1 / -1; max-width: 780px;
@@ -1122,6 +1123,13 @@ html.has-ui-dialog .scene-next { right: 2px; bottom: -4px; color: var(--gold); }
 .gauge-icon { display: inline-block; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #3a2a12 center / contain no-repeat; box-shadow: inset 0 0 0 1px #a8853a; }
 html.has-ui-icon-insight .gauge-icon.skill-insight { background-image: url(../assets/ui/icon_insight.webp); box-shadow: none; }
 html.has-ui-icon-flow .gauge-icon.skill-flow { background-image: url(../assets/ui/icon_flow.webp); box-shadow: none; }
+html.has-ui-icon-sleight .gauge-icon.skill-sleight { background-image: url(../assets/ui/icon_sleight.webp); box-shadow: none; }
+/* Sleight of Hand: the pond tiles that can be taken, and the hand tile being given away */
+.b-pond .tile.can { cursor: pointer; outline: 2px solid #e2b04a; outline-offset: 1px; border-radius: 3px; animation: pond-pick 1.1s ease-in-out infinite; }
+.b-pond .tile.can:hover { outline-color: #ff6a3d; filter: brightness(1.15); }
+@keyframes pond-pick { 50% { outline-color: rgba(226, 176, 74, 0.3); } }
+.b-hand .tile.swap-out { transform: translateY(-16%); filter: drop-shadow(0 0 6px #e2574c); }
+@media (prefers-reduced-motion: reduce) { .b-pond .tile.can { animation: none; } }
 .gauge-bar { position: relative; flex: 1; min-width: 56px; max-width: 120px; height: 10px; border: 1px solid #7d6227; border-radius: 6px; background: #0b0c0e; overflow: hidden; }
 .gauge-bar i { display: block; width: calc(var(--g, 0) * 1%); height: 100%; border-radius: 4px; background: linear-gradient(90deg, #7a1810, #e8432f 60%, #ffb347); }
 html.has-ui-gauge .gauge-bar { height: 15px; border: 0; border-radius: 0; background: url(../assets/ui/gauge.webp) center / 100% 100% no-repeat; overflow: visible; }
