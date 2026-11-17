@@ -53,8 +53,14 @@ double ron — one discard has one winner.
   events of the source but does not reproduce the manga's or anime's dialogue.
 - The artwork is AI-generated (GPT Image) from original written descriptions; it does not copy the manga's
   or anime's drawings. Mahjong tile faces are drawn in code and the sound effects are synthesised.
-- The voices are synthesised with Microsoft Edge's neural text-to-speech voices. They are not the anime's
-  voice actors and do not imitate them.
+- The voices are synthesised. Akagi, Nangou and Ryuzaki are voiced with [IndexTTS 2.5](https://github.com/index-tts/index-tts)
+  (bilibili) from voices designed for this game from written descriptions with Qwen3-TTS, so no real person's voice
+  was copied; the other characters use Microsoft Edge's neural text-to-speech voices. None of them are the anime's
+  voice actors or imitate them.
+- The IndexTTS recordings are outputs of the bilibili IndexTTS model, used under the bilibili Model Use License
+  Agreement (a copy is in `assets/voice/LICENSE-IndexTTS.txt`). As that licence requires: Any modifications made to
+  the original model in this Derivative Work are not endorsed, warranted, or guaranteed by the original right-holder
+  of the original model, and the original right-holder disclaims all liability related to this Derivative Work.
 - No official artwork, music or footage is included. Please keep it that way if you share the game.
 
 *Akagi* © Nobuyuki Fukumoto / Takeshobo. This project is a fan work and is not affiliated with or endorsed
@@ -87,7 +93,7 @@ Only the files needed to play:
 - **不会打麻将？** 标题画面里有五分钟入门的“游戏说明”。
 - **尚未实现**——杠、赤宝牌、途中流局、流局满贯、一炮多响。
 
-故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，配音由微软 Edge 神经网络语音合成，并非动画声优，未使用任何官方素材。
+故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，配音为语音合成：赤木、南乡、龙崎由 IndexTTS 2.5 根据为本作文字设计的声音生成（未复制任何真人声音），其他角色使用微软 Edge 神经网络语音，均非动画声优，未使用任何官方素材。
 《アカギ》© 福本伸行／竹书房。本作为同人作品，与版权方无任何关联。
 
 ## 日本語
@@ -107,5 +113,6 @@ Only the files needed to play:
 - **麻雀が初めての方へ**——タイトル画面に、五分でわかる「遊び方」があります。
 - **未実装**——カン、赤ドラ、途中流局、流し満貫、ダブロン。
 
-ストーリーの文章は本作のために書き下ろした再話で、絵は独自の文章による説明から AI が生成したものです。ボイスは
-Microsoft Edge のニューラル音声合成によるもので、アニメの声優ではありません。公式の素材は一切使用していません。『アカギ』© 福本伸行／竹書房。本作はファン作品であり、権利者とは一切関係ありません。
+ストーリーの文章は本作のために書き下ろした再話で、絵は独自の文章による説明から AI が生成したものです。ボイスは音声合成です。
+アカギ・南郷・竜崎は本作のために文章から設計した声をもとに IndexTTS 2.5 で生成し（実在の人物の声は使っていません）、ほかの登場人物は
+Microsoft Edge のニューラル音声を使っています。いずれもアニメの声優ではありません。公式の素材は一切使用していません。『アカギ』© 福本伸行／竹書房。本作はファン作品であり、権利者とは一切関係ありません。

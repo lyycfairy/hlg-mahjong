@@ -21,6 +21,7 @@
  *                            'discard' - choose a discard: options name tiles ('2p', or '*' for the rest)
  *                  prelude   lines shown when the hand appears, before anything moves
  *                  intro     lines shown at the decision, before the choice
+ *                  (any line may carry emo: 'preset' - the mood its recorded voice acts; see chapter1.js)
  *                  options   [{ id, label / tiles, note (commentary), after (lines), effects,
  *                              later (lines after the hand ends), laterEffects }]
  *                  effects   { grant: { seat, skill, gauge } }   { gauge: { seat, set | add } }
@@ -78,7 +79,7 @@
             'South 1. Six turns in, the boy had not said a word - and his tiles had quietly come together.',
             '南一局。六巡目。少年は一言も発しないまま——その手は、静かにまとまっていた。',
             '南一局。第六巡。少年一句话也没说——手里的牌却已悄悄成形。') },
-          { who: 'nangou', face: 'shock', think: true, text: L(
+          { who: 'nangou', emo: 'shock', face: 'shock', think: true, text: L(
             'He is ready. Already? …And he never declared riichi. Does he even know he can?',
             'テンパイしてる。もう……？　それにリーチもかけていない。かけられると分かってるのか、こいつは。',
             '他听牌了。这么快？……而且没有立直。这小子到底知不知道自己可以立直？') },
@@ -88,11 +89,11 @@
             'Then the lackey\'s discard hit the felt.',
             'そのとき、子分の捨て牌が卓を叩いた。',
             '就在这时，跟班打出的牌落在了桌上。') },
-          { who: 'nangou', face: 'shock', text: L(
+          { who: 'nangou', emo: 'urgent', face: 'shock', text: L(
             'That\'s it - that is your tile! Say it, Akagi. *Ron!*',
             'それだ……それがお前のアガリ牌だ！　言え、赤木。*ロン*だ！',
             '就是它——那是你的和牌！快喊，赤木。*荣*！') },
-          { who: 'akagi', face: 'calm', text: L(
+          { who: 'akagi', emo: 'flat', face: 'calm', text: L(
             '…The cheap side.',
             '……安目か。',
             '……是小的那一边。') },
@@ -102,24 +103,24 @@
             id: 'ron',
             label: L('Ron - take the win', 'ロン——アガる', '荣和——拿下这一局'),
             note: [
-              { who: 'nangou', face: 'worried', text: L(
+              { who: 'nangou', emo: 'pleading', face: 'worried', text: L(
                 'Take it! A win is a win. Two thousand points, and their dealer turn is gone. Don\'t get greedy on your very first hand.',
                 'アガれ！　アガリはアガリだ。二千点、それに奴らの親も流れる。最初の一局から欲をかくな。',
                 '和吧！和了就是和了。两千点，还能把他们的庄打掉。第一局就别贪了。') },
             ],
             after: [
-              { who: 'akagi', face: 'calm', text: L('Ron.', 'ロン。', '荣。') },
+              { who: 'akagi', emo: 'flat', face: 'calm', text: L('Ron.', 'ロン。', '荣。') },
             ],
             later: [
               { text: L(
                 'Two thousand points changed hands. The lackey clicked his tongue and paid.',
                 '二千点が動いた。子分は舌打ちして、点棒を払った。',
                 '两千点易手。跟班咂了下嘴，付了点棒。') },
-              { who: 'ryuzaki', face: 'irritated', text: L(
+              { who: 'ryuzaki', emo: 'wary', face: 'irritated', text: L(
                 '…He was ready, and he sat there without a sound. No riichi. No tell. That is not beginner\'s luck.',
                 '……テンパイしてやがったのに、音ひとつ立てなかった。リーチもなし、気配もなし。ありゃあ素人のまぐれじゃねえ。',
                 '……他早就听牌了，却一点声息都没有。不立直，不露破绽。这可不是新手的运气。') },
-              { who: 'ryuzaki', face: 'smug', text: L(
+              { who: 'ryuzaki', emo: 'threat', face: 'smug', text: L(
                 'Fine. From here on I watch every tile that kid touches.',
                 'いいだろう。ここからは、あのガキが触る牌を、一枚残らず見てやる。',
                 '行。从现在起，那小鬼摸的每一张牌，我都要盯死。') },
@@ -130,11 +131,11 @@
             id: 'pass',
             label: L('Let it pass', '見逃す', '放过这张'),
             note: [
-              { who: 'nangou', face: 'shock', text: L(
+              { who: 'nangou', emo: 'alarm', face: 'shock', text: L(
                 'Let it go?! Pass it and you cannot call ron again until your next draw - and the five may never come!',
                 '見逃すだと！？　見逃したら、次のツモまでロンはできないんだぞ。それに五筒が出てくる保証なんて、どこにもない！',
                 '放过去？！放过之后，到你下次摸牌之前都不能荣和——而且五筒未必会来！') },
-              { who: 'akagi', face: 'smirk', text: L(
+              { who: 'akagi', emo: 'smirk', face: 'smirk', text: L(
                 'Two thousand from the errand boy changes nothing. The other side of this wait is worth four times as much.',
                 '使い走りから二千点取っても、何も変わらない。この待ちの反対側は、その四倍だ。',
                 '从跑腿的手里拿两千点，什么都改变不了。这个听牌的另一边，值它的四倍。') },
@@ -144,7 +145,7 @@
                 'The boy did not move. The tile lay there, and the turn passed.',
                 '少年は動かなかった。牌はそこに置かれたまま、巡目だけが過ぎた。',
                 '少年没有动。那张牌就躺在那里，这一巡就这样过去了。') },
-              { who: 'nangou', face: 'shock', text: L(
+              { who: 'nangou', emo: 'alarm', face: 'shock', text: L(
                 'W-what are you doing?! That was your winning tile!',
                 'な、何をしてる！？　今のはお前のアガリ牌だぞ！',
                 '你、你在干什么？！刚才那可是你的和牌！') },
@@ -152,7 +153,7 @@
                 'Heh. The brat doesn\'t even know when he has won. Relax, boss - he\'s a pigeon.',
                 'へっ。このガキ、自分がアガってることにも気づいてねえ。安心しなよ兄貴、ただのカモだ。',
                 '嘿。这小鬼连自己和了都不知道。放心吧大哥，就是只肥羊。') },
-              { who: 'akagi', face: 'glare', think: true, text: L(
+              { who: 'akagi', emo: 'smirk', face: 'glare', think: true, text: L(
                 'Good. Keep thinking that.',
                 'それでいい。そう思っていてくれ。',
                 '很好。就这么想下去吧。') },
@@ -217,7 +218,7 @@
             '立直。慢慢想吧，小弟弟。') },
         ],
         intro: [
-          { who: 'nangou', face: 'worried', think: true, text: L(
+          { who: 'nangou', emo: 'worried', face: 'worried', think: true, text: L(
             'A professional\'s riichi… and Akagi has just drawn into a ready hand of his own.',
             '玄人のリーチ……しかも赤木は、いまのツモで自分もテンパイだ。',
             '职业高手的立直……而赤木刚摸的这张，让他自己也听牌了。') },
@@ -228,23 +229,23 @@
         ],
         notes: {
           '2p': [
-            { who: 'nangou', face: 'resolve', text: L(
+            { who: 'nangou', emo: 'teach', face: 'resolve', text: L(
               'He threw the five of circles himself when he declared. The two is suji - a two-sided wait cannot hit it. It should be safe, and it makes you ready.',
               '奴はリーチのとき、自分で五筒を切ってる。二筒はスジだ——両面待ちには当たらない。通るはずだし、これでテンパイだ。',
               '他立直时自己打了五筒。二筒是筋牌——两面听不会和这张。应该能过，而且打了就听牌。') },
-            { who: 'akagi', face: 'calm', think: true, text: L(
+            { who: 'akagi', emo: 'cold', face: 'calm', think: true, text: L(
               '"Should be." That is exactly the word he wants me to lean on.',
               '「はず」……か。奴がオレに寄りかからせたいのは、まさにその言葉だ。',
               '“应该”……他想让我依靠的，正是这两个字。') },
           ],
           '1s': [
-            { who: 'nangou', face: 'worried', text: L(
+            { who: 'nangou', emo: 'worried', face: 'worried', text: L(
               'The one of bamboo - he discarded it himself, so it cannot deal in. But that is your dora pair. Throw it and this hand is worth nothing.',
               '一索か。奴自身が切ってるから、絶対に当たらない。だがそれはお前のドラの対子だ。切れば、この手の値打ちは消える。',
               '一索——他自己打过，绝对不会放铳。但那是你的宝牌对子。打掉它，这手牌就不值钱了。') },
           ],
           '*': [
-            { who: 'nangou', face: 'worried', text: L(
+            { who: 'nangou', emo: 'worried', face: 'worried', text: L(
               'That one breaks up the hand. If you are going to step back, at least make sure the tile is safe.',
               'それを切れば手が崩れる。下がるなら、せめて安全な牌で下がれ。',
               '打那张，手牌就散了。要退的话，至少得退在安全牌上。') },
@@ -264,15 +265,15 @@
                 'Yagi\'s tiles came down: a closed wait on the two of circles - baited with the five he had thrown himself.',
                 '矢木の手牌が倒された。二筒のカンチャン待ち——自分で切った五筒を餌にした罠だ。',
                 '矢木的手牌倒了下来：嵌张听二筒——用他自己打出的五筒做的饵。') },
-              { who: 'nangou', face: 'shock', text: L(
+              { who: 'nangou', emo: 'shock', face: 'shock', text: L(
                 'A suji trap…! He threw the five *so that* you would trust the two!',
                 'スジ引っかけ……！　二筒を信用させる*ために*、五筒を切ったのか！',
                 '筋牌陷阱……！他打五筒，*就是为了*让你相信二筒！') },
-              { who: 'akagi', face: 'smirk', text: L(
+              { who: 'akagi', emo: 'amused', face: 'smirk', text: L(
                 'I see. So that is how you think.',
                 'なるほど。あんたは、そういう考え方をするんだ。',
                 '原来如此。你是这样想事情的。') },
-              { who: 'akagi', face: 'glare', think: true, text: L(
+              { who: 'akagi', emo: 'cold', face: 'glare', think: true, text: L(
                 'Then I only have to think one layer deeper than that.',
                 'なら、その一枚奥を読めばいいだけのことだ。',
                 '那我只要比这再多想一层就行了。') },
