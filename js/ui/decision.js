@@ -147,6 +147,9 @@
   const TableBoard = {
     /**
      * A story table: { me, dealer, roundWind, kyoku, dora, wall, seats: [{ who, name, hand, draw, river, riichi, score }] }.
+     * It is drawn as a square mahjong table seen from the player's chair: the four ponds in the middle, each
+     * facing the one who threw them, every hand along its own edge (the player's own, larger, below the table)
+     * and a name plate in the corner to each player's right.
      * `opts.win` (a tile code) lays the hand open with that tile as the winning one.
      * Washizu mahjong: with `glass: true` every tile is glass, and each seat may add `opaque` (the codes of
      * its opaque tiles) and `melds` (['2222s', ...]). The other seats' hands then show through the glass:
@@ -172,7 +175,7 @@
         }
         return { shown, hidden };
       };
-      const meldsHtml = seat => (seat.melds || []).map(m => `<span class="tb-meld">${Tiles.parse(m).map(t => TileView.type(t, 'rv' + glass)).join('')}</span>`).join('');
+      const meldsHtml = (seat, cls) => (seat.melds || []).map(m => `<span class="tb-meld">${Tiles.parse(m).map(t => TileView.type(t, cls + glass)).join('')}</span>`).join('');
       // the tiles a line of the story points at
       const lit = (i, where) => {
         const out = new Set();
@@ -184,61 +187,82 @@
         return out;
       };
       const win = table.win || null;
-      const river = (seat, i) => {
+
+      // the pond in front of a seat: rows of six (the third takes whatever is left)
+      const pond = i => {
+        const seat = table.seats[i];
         const tiles = Tiles.parse(seat.river || '');
         const glow = lit(i, 'river');
         const newest = table.last && table.last.seat === i ? tiles.length - 1 : -1;
-        const cells = tiles.map((t, k) => TileView.type(t, 'rv' + glass + (seat.riichi === k ? ' sideways' : '') +
-          (k === newest ? (table.last.win ? ' last hit' : ' last') : '') + (glow.has(t) ? ' focus' : ''))).join('');
-        let through = '';
-        if (table.glass && i !== me && (seat.hand || seat.melds)) {
-          const h = split(seat);
-          const glowHand = lit(i, 'hand');
-          const won = win && win.seat === i ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(win.tile)[0], 'rv glass win')}` : '';
-          through = `<div class="tb-through">${h.shown.map(t => TileView.type(t, 'rv glass' + (glowHand.has(t) ? ' focus' : ''))).join('')}` +
-            `${h.hidden.map(() => TileView.back('rv' + (glowHand.has(-1) ? ' focus' : ''))).join('')}${meldsHtml(seat)}${won}</div>`;
-        }
-        const declared = seat.riichi != null;
-        const call = table.call && table.call.seat === i ? `<span class="tb-call ${table.call.kind}">${esc(T('tb.call.' + table.call.kind))}</span>` : '';
-        return `<div class="tb-river ${i === me ? 'me' : ''} ${declared ? 'riichi' : ''} ${win && win.seat === i ? 'won' : ''}">` +
-          `<div class="tb-who"><span class="wind-badge ${wind(i) === 0 ? 'dealer' : ''}" lang="ja">${WIND_KANJI[wind(i)]}</span>` +
-          `<span class="tb-name">${esc(nameOf(i))}</span>${call}` +
-          (seat.score != null ? `<span class="tb-score">${fmt(seat.score)}</span>` : '') +
-          (declared ? `<span class="tb-riichi">${esc(T('act.riichi'))}</span>` : '') + '</div>' +
-          `<div class="tb-tiles">${cells}</div>${through}</div>`;
+        const cells = tiles.map((t, k) => TileView.type(t, 'qp' + glass + (seat.riichi === k ? ' sideways' : '') +
+          (k === newest ? (table.last.win ? ' last hit' : ' last') : '') + (glow.has(t) ? ' focus' : '')));
+        return [cells.slice(0, 6), cells.slice(6, 12), cells.slice(12)].map(r => `<div class="tq-row">${r.join('')}</div>`).join('');
       };
-      // opponents in the order they play after me, then my own pond
-      const order = [1, 2, 3].map(k => (me + k) % 4).concat([me]);
+      // an opponent's hand, standing along his edge of the table
+      const rail = i => {
+        const seat = table.seats[i];
+        const glowHand = lit(i, 'hand');
+        let tiles;
+        if (seat.hand && (table.glass || (win && win.seat === i))) {
+          // glass shows through; a hand that has won lies open
+          const h = split(seat);
+          tiles = h.shown.map(t => TileView.type(t, 'qr' + glass + (glowHand.has(t) ? ' focus' : ''))).join('') +
+            h.hidden.map(() => TileView.back('qr' + (glowHand.has(-1) ? ' focus' : ''))).join('');
+        } else {
+          const n = seat.hand ? Tiles.parse(seat.hand).length : 13 - (seat.melds || []).length * 3;
+          tiles = new Array(n + 1).join(TileView.back('qr'));
+        }
+        const won = win && win.seat === i ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(win.tile)[0], 'qr win' + glass)}` : '';
+        return tiles + meldsHtml(seat, 'qr') + won;
+      };
+      // name, wind, points and what he has just declared - in the corner to each player's right, as on a real table
+      const plate = (i, pos) => {
+        const seat = table.seats[i];
+        const call = table.call && table.call.seat === i ? `<span class="tb-call ${table.call.kind}">${esc(T('tb.call.' + table.call.kind))}</span>` : '';
+        return `<div class="tq-plate p-${pos} ${i === me ? 'me' : ''} ${seat.riichi != null ? 'riichi' : ''} ${win && win.seat === i ? 'won' : ''}">` +
+          `<div class="tq-who"><span class="wind-badge ${wind(i) === 0 ? 'dealer' : ''}" lang="ja">${WIND_KANJI[wind(i)]}</span><span class="tb-name">${esc(nameOf(i))}</span></div>` +
+          (seat.score != null ? `<div class="tb-score">${fmt(seat.score)}</div>` : '') +
+          `<div class="tq-tags">${seat.riichi != null ? `<span class="tb-riichi">${esc(T('act.riichi'))}</span>` : ''}${call}</div></div>`;
+      };
+      const right = (me + 1) % 4, across = (me + 2) % 4, left = (me + 3) % 4;
+
       const mine = table.seats[me];
+      const glowMine = lit(me, 'hand');
       let hand;
       if (table.glass) {
         // in order, the opaque tiles marked where they stand
         const dark = Tiles.parse(mine.opaque || '');
-        const glowMine = lit(me, 'hand');
         hand = Tiles.parse(mine.hand || '').map(t => {
           const k = dark.indexOf(t);
           const f = glowMine.has(t) ? ' focus' : '';
           if (k >= 0) { dark.splice(k, 1); return TileView.type(t, 'th opaque' + f); }
           return TileView.type(t, 'th glass' + f);
-        }).join('') + meldsHtml(mine);
+        }).join('') + meldsHtml(mine, 'th');
       } else {
-        hand = Tiles.parse(mine.hand || '').map(t => TileView.type(t, 'th')).join('');
+        hand = Tiles.parse(mine.hand || '').map(t => TileView.type(t, 'th' + (glowMine.has(t) ? ' focus' : ''))).join('') + meldsHtml(mine, 'th');
       }
       const myWin = opts.win || (win && win.seat === me ? win.tile : null);
       const extra = myWin ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(myWin)[0], 'th win' + glass)}`
-        : (mine.draw ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(mine.draw)[0], 'th drawn' + glass + (lit(me, 'hand').has(Tiles.parse(mine.draw)[0]) ? ' focus' : ''))}` : '');
-      const dora = Tiles.parse(table.dora || '').map(t => TileView.type(t, 'rv' + glass)).join('');
+        : (mine.draw ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(mine.draw)[0], 'th drawn' + glass + (glowMine.has(Tiles.parse(mine.draw)[0]) ? ' focus' : ''))}` : '');
+      const dora = Tiles.parse(table.dora || '').map(t => TileView.type(t, 'qp' + glass)).join('');
       return `
-        <div class="tb">
-          <div class="tb-top">
-            <div class="tb-info">
+        <div class="tb tq">
+          <div class="tq-table">
+            <div class="tq-rail r-top"><div class="tq-railrow">${rail(across)}</div></div>
+            <div class="tq-rail r-left"><div class="tq-railrow">${rail(left)}</div></div>
+            <div class="tq-rail r-right"><div class="tq-railrow">${rail(right)}</div></div>
+            ${plate(across, 'tl')}${plate(right, 'tr')}${plate(left, 'bl')}${plate(me, 'br')}
+            <div class="tq-pond d-top"><div class="tq-pondin">${pond(across)}</div></div>
+            <div class="tq-pond d-left"><div class="tq-pondin">${pond(left)}</div></div>
+            <div class="tq-pond d-right"><div class="tq-pondin">${pond(right)}</div></div>
+            <div class="tq-pond d-bottom"><div class="tq-pondin">${pond(me)}</div></div>
+            <div class="tq-center">
               <div class="tb-round">${esc(I18n.roundName(table.roundWind || 0, table.kyoku || 0))}</div>
-              <div class="tb-dora"><span>${T('b.doraInd')}</span>${dora}</div>
+              <div class="tb-dora"><span>${T('b.doraInd')}</span><div class="tq-doras">${dora}</div></div>
               ${table.wall != null ? `<div class="tb-wall">${esc(T('b.wall'))} <b>${table.wall}</b></div>` : ''}
             </div>
-            <div class="tb-rivers">${order.map(i => river(table.seats[i], i)).join('')}</div>
           </div>
-          <div class="tb-hand"><span class="tb-label">${esc(T('tb.hand', { name: nameOf(me) }))}</span><div class="tb-handrow">${hand}${extra}</div></div>
+          <div class="tb-hand"><div class="tb-handrow">${hand}${extra}</div></div>
           <div class="tb-decide"></div>
         </div>`;
     },

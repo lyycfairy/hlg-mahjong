@@ -23,8 +23,9 @@
  *   allin    (All In) for the rest of the hand the blood and money at stake are doubled
  *            (the interface reads board.stakes(seat))
  *   fortune  (Heaven's Favour) Washizu's luck: like the Flow, but for two draws - the best tiles left
- *   collusion (Inside Job) fires by itself: the moment the seat it serves (`watch`) declares riichi,
- *            its owner throws him a winning tile if he holds one (turn opts.feed)
+ *   collusion (Inside Job) a standing trait, not a gauge: the moment the seat it serves (`watch`)
+ *            declares riichi, its owner throws him a winning tile if he holds one (turn opts.feed),
+ *            announced once a hand. (The rest of a partner's play is the 'supporter' AI, ai.js.)
  *   sleight  (Sleight of Hand) on his own turn the player swaps a tile in his hand
  *            for any tile lying in a pond. It does not wait for a full gauge:
  *            each swap costs DEFS.sleight.cost, so a full gauge is four swaps.
@@ -62,7 +63,7 @@
     notice: { id: 'notice', auto: true },
     allin: { id: 'allin', stakes: 2 },
     fortune: { id: 'fortune', draws: 2 },
-    collusion: { id: 'collusion', auto: true },
+    collusion: { id: 'collusion', auto: true, passive: true },
   };
 
   class SkillBoard {
@@ -97,7 +98,9 @@
     gauge(seat) { return this.seats[seat] ? this.seats[seat].gauge : 0; }
     /** gauge a single use takes: all of it, except for a skill with a cost of its own */
     cost(seat) { const d = this.seats[seat] && DEFS[this.seats[seat].skill]; return (d && d.cost) || MAX; }
-    ready(seat) { return !!this.seats[seat] && this.seats[seat].gauge >= this.cost(seat) && !this.active[seat]; }
+    /** a standing trait needs no gauge (Inside Job) */
+    passive(seat) { const d = this.seats[seat] && DEFS[this.seats[seat].skill]; return !!(d && d.passive); }
+    ready(seat) { return !!this.seats[seat] && (this.passive(seat) || this.seats[seat].gauge >= this.cost(seat)) && !this.active[seat]; }
     /** uses left in the gauge (Sleight of Hand) */
     usesLeft(seat) { return this.seats[seat] ? Math.floor(this.seats[seat].gauge / this.cost(seat)) : 0; }
 
@@ -208,7 +211,7 @@
     async activate(round, seat) {
       if (!this.ready(seat) || this.skillOf(seat) === 'sleight') return false;
       const skill = this.seats[seat].skill;
-      this.seats[seat].gauge = 0;
+      if (!this.passive(seat)) this.seats[seat].gauge = 0;
       this.active[seat] = skill;
       this.used[seat]++;
       if (skill === 'flow' || skill === 'fortune') this.flowLeft[seat] = DEFS[skill].draws;

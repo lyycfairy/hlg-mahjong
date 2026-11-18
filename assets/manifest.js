@@ -15,6 +15,8 @@ window.AssetManifest = {
   "suzuki": "medium",
   "bg_mansion": "medium",
   "bg_washizu": "medium",
+  "bg_bloodroom": "medium",
+  "ui_bundle": "medium",
   "bg_basin": "low",
   "fx_allin": "low",
   "fx_fortune": "medium",
@@ -46,6 +48,10 @@ window.AssetManifest = {
    900
   ],
   "bg/battle.jpg": [
+   1600,
+   900
+  ],
+  "bg/bloodroom.jpg": [
    1600,
    900
   ],
@@ -336,6 +342,10 @@ window.AssetManifest = {
   "ui/btn_steel.webp": [
    529,
    194
+  ],
+  "ui/bundle.webp": [
+   1419,
+   620
   ],
   "ui/burst.webp": [
    552,

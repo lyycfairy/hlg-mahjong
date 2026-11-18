@@ -26,6 +26,15 @@
  *                   winning tile on purpose. `signal` (0..1) is how reliably the two pass
  *                   signals, i.e. how often he knows what the ally holds; `feed` (0..1) is
  *                   how readily he gives up a big hand to the ally when nobody threatens.
+ *   'supporter'     the partner at a two-against-two table (Washizu mahjong): he plays his
+ *                   partner's hand (`ally`), not his own. He does not declare riichi, does not
+ *                   call, and hardly cares about winning; he keeps in his hand the tiles the
+ *                   partner is waiting on - or will need - instead of throwing them away, passes
+ *                   him the tiles he can pon, and deals him his winning tile when the moment
+ *                   comes: at once after the partner's riichi, when the enemy (`foe`) threatens,
+ *                   and - with `feedDama` - when the hand is big or the tiles are running out.
+ *                   He never throws what the enemy could call to get closer. Partners know each
+ *                   other's hands, glass or not.
  * level   0..1  how often the best discard is found (below 1 the player blunders now and then)
  *
  * A computer player sees only what a human could see: its own hand, the ponds,
@@ -46,7 +55,46 @@
     aggressor:    { attack: 1.4,  caution: 0.55, callMargin: 0.0,  riichi: 1.0,  big: 1.15, greed: 0.85 },
     independent:  { attack: 1.0,  caution: 1.0,  callMargin: 0.12, riichi: 0.95, big: 1.0,  greed: 0.65 },
     collaborator: { attack: 0.75, caution: 1.2,  callMargin: 0.2,  riichi: 0.7,  big: 1.0,  greed: 0.6 },
+    supporter:    { attack: 0.3,  caution: 1.4,  callMargin: 99,   riichi: 0,    big: 1.0,  greed: 0.3 },
   };
+  const hasAlly = P => (P.style === 'collaborator' || P.style === 'supporter') && P.ally != null;
+
+  /** would calling tile `id` (thrown by `from`) bring `who` closer to a ready hand? { pon, chi } */
+  function callHelps(round, who, from, id) {
+    const o = round.callOptions(who, from, id);
+    const out = { pon: false, chi: false };
+    if (!o.pon && !o.chi.length) return out;
+    const q = round.players[who];
+    const ac = Tiles.counts(q.hand.map(typeOf));
+    const before = Hand.shanten(ac, q.melds.length);
+    const closer = used => {
+      const c2 = ac.slice();
+      for (const u of used) c2[typeOf(u)]--;
+      return Hand.shanten(c2, q.melds.length + 1) < before;
+    };
+    if (o.pon && closer(o.pon)) out.pon = true;
+    if (o.chi.some(closer)) out.chi = true;
+    return out;
+  }
+
+  /** the tiles a hand is waiting on (ready) or that would bring it closer (one or two away) */
+  function wantedBy(round, who) {
+    const q = round.players[who];
+    const want = new Set();
+    if (q.hand.length % 3 !== 1) return { want, ready: false };
+    const c = Tiles.counts(q.hand.map(typeOf));
+    const sh = Hand.shanten(c, q.melds.length);
+    if (sh === 0) { for (const w of Hand.waits(c, q.melds.length)) want.add(w); return { want, ready: true }; }
+    if (sh <= 2) {
+      for (let t = 0; t < 34; t++) {
+        if (c[t] >= 4) continue;
+        c[t]++;
+        if (Hand.shanten(c, q.melds.length) < sh) want.add(t);
+        c[t]--;
+      }
+    }
+    return { want, ready: false };
+  }
 
   const isValueHonor = (round, seat, t) => Tiles.isDragon(t) || t === round.seatWind(seat) || t === round.roundWindTile();
 
@@ -166,7 +214,7 @@
     const threats = [];
     for (const th of view.threats) {
       if (dazed) break;                                                 // ... so nobody looks dangerous
-      if (P.style === 'collaborator' && th.seat === P.ally) continue;   // the ally is never a threat
+      if (hasAlly(P) && th.seat === P.ally) continue;                   // the ally is never a threat
       const q = round.players[th.seat];
       const t = { seat: th.seat, safe: th.safe, tenpai: th.tenpai, loss: th.loss, riichi: th.riichi, exact: null, weight: 1 };
       if (reads.indexOf(th.seat) >= 0) {
@@ -292,8 +340,15 @@
       return p.melds.map(m => ({ type: m.type, tiles: m.tiles.map(typeOf) }));
     }
 
+    /** a supporter wins only when that helps: the enemy is pressing, or the partner is not ready himself */
+    function supporterWins(round, seat) {
+      const foes = round.players.filter(q => q.seat !== seat && q.seat !== P.ally);
+      if (foes.some(q => q.riichi)) return true;
+      return !wantedBy(round, P.ally).ready;
+    }
+
     function onTurn(round, seat, opts) {
-      if (opts.canTsumo) return { type: 'tsumo' };
+      if (opts.canTsumo && !(P.style === 'supporter' && P.ally != null && !supporterWins(round, seat))) return { type: 'tsumo' };
       if (opts.feed != null && round.players[seat].hand.indexOf(opts.feed) >= 0) return { type: 'discard', tile: opts.feed, riichi: false };
       const p = round.players[seat];
       if (p.riichi) return { type: 'discard', tile: p.drawn, riichi: false };
@@ -328,6 +383,37 @@
         // a tile known to deal in ends the hand: there is no attack left to weigh against it
         if (c.risk.certain) c.score = -2000 - c.risk.cost;
         else c.score = c.a.score - style.caution * c.risk.cost - c.keep * 6;
+      }
+
+      /* ---- the supporter: his partner's hand comes first ---- */
+      if (P.style === 'supporter' && P.ally != null) {
+        const ally = round.players[P.ally];
+        const need = wantedBy(round, P.ally);
+        const pressed = env.threats.some(th => (P.foe == null || th.seat === P.foe) && (th.riichi || th.tenpai >= 0.6));
+        const late = round.wall.length <= 14;
+        for (const c of cands) {
+          // safety first; his own hand hardly counts
+          c.score = (c.risk.certain ? -2000 - c.risk.cost : -style.caution * c.risk.cost) + c.a.score * 0.12 - c.keep * 2;
+          const res = round.ronResult(P.ally, c.id);
+          if (res) {
+            // the partner's winning tile: dealt the moment it should be, kept back until then
+            const pay = Yaku.payments(res.base, P.ally === round.dealer, false, round.honba).ron;
+            const now = ally.riichi || pressed || (P.feedDama && (late || pay >= 7700));
+            c.score += now ? 6000 + pay * 0.1 : -900;
+            continue;
+          }
+          if (need.want.has(c.t)) {
+            // a tile the partner needs: passed to him if he can pon it into something, otherwise held for him
+            const give = !ally.riichi && callHelps(round, P.ally, seat, c.id).pon &&
+              (isValueHonor(round, P.ally, c.t) || ally.melds.length > 0);
+            c.score += give ? 500 : -700;
+          }
+          if (P.foe != null) {
+            // nothing for the enemy: he sits right after the supporter and could call it
+            const h = callHelps(round, P.foe, seat, c.id);
+            if (h.pon || h.chi) c.score -= 260;
+          }
+        }
       }
 
       /* ---- playing for the team ---- */
@@ -388,10 +474,12 @@
 
     function onCall(round, seat, opts) {
       if (opts.canRon) {
-        if (P.style === 'collaborator' && opts.from === P.ally) return { type: 'pass' };   // never off the ally
+        if (hasAlly(P) && opts.from === P.ally) return { type: 'pass' };                   // never off the ally
+        if (P.style === 'supporter' && P.ally != null && !supporterWins(round, seat)) return { type: 'pass' };
         return { type: 'ron' };
       }
       if (!opts.pon && !opts.chi.length) return { type: 'pass' };
+      if (P.style === 'supporter') return { type: 'pass' };                                // he keeps his tiles for his partner
       const p = round.players[seat];
       const style = mood(round, seat);
       const env = environment(round, seat, P);
@@ -437,7 +525,7 @@
       const p = round.players[seat];
       if (skill === 'insight') {
         if (p.riichi) return false;                                       // nothing left to decide
-        const foe = q => q.seat !== seat && !(P.style === 'collaborator' && q.seat === P.ally);
+        const foe = q => q.seat !== seat && !(hasAlly(P) && q.seat === P.ally);
         return round.players.some(q => foe(q) && (q.riichi || q.melds.length >= 2)) || p.discards.length >= 6;
       }
       if (skill === 'fortune') {

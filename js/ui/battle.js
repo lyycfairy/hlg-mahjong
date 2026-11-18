@@ -2,7 +2,8 @@
  * Battle screen: runs one stage (a Match) with the human at seat 0.
  *
  *   const battle = new Battle(containerEl, stage, { context: 'story'|'battle' });
- *   battle.run().then(({ cleared, final, choice, opening, aborted }) => ...)
+ *   battle.run().then(({ cleared, final, choice, opening, aborted, skipped }) => ...)
+ *   In the story a match can be skipped (the top bar, or the briefing): { skipped: true } - the story goes on.
  *
  * A stage may open in the middle of its first hand, at a decision from the
  * story (stage.opening): the player is shown the hand, what each choice leads
@@ -58,8 +59,9 @@
 
     async start() {
       this.mount();
-      await this.showIntro();
+      const go = await this.showIntro();
       if (this.aborted) return;
+      if (go === 'skipmatch') { this.finish({ skipped: true, cleared: false }); return; }
       const st = this.stage;
       const agents = st.ai.map((cfg, seat) => (seat === 0 ? this.humanAgent() : this.scripted(seat, AI.create(Object.assign({}, cfg)))));
       this.match = new Match({
@@ -134,6 +136,7 @@
             <button class="btn-ghost" data-act="speed"></button>
             <button class="btn-ghost" data-act="sound"></button>
             <button class="btn-ghost" data-act="voice"></button>
+            ${this.opts.context === 'story' ? `<button class="btn-ghost b-skipmatch" data-act="skipmatch" title="${esc(T('b.skipTip'))}">${esc(T('b.skipMatch'))}</button>` : ''}
             <button class="btn-ghost" data-act="quit">${esc(T('b.quit'))}</button>
           </div>
         </header>
@@ -141,11 +144,14 @@
           <div class="b-seat b-seat-top" data-seat="2"></div>
           <div class="b-seat b-seat-left" data-seat="3"></div>
           <div class="b-board">
-            <div class="b-pond b-pond-top" data-seat="2"></div>
-            <div class="b-pond b-pond-left" data-seat="3"></div>
+            <div class="b-rail b-rail-top" data-seat="2"><div class="b-railrow"></div></div>
+            <div class="b-rail b-rail-left" data-seat="3"><div class="b-railrow"></div></div>
+            <div class="b-rail b-rail-right" data-seat="1"><div class="b-railrow"></div></div>
+            <div class="b-pond b-pond-top" data-seat="2"><div class="b-pondin"></div></div>
+            <div class="b-pond b-pond-left" data-seat="3"><div class="b-pondin"></div></div>
             <div class="b-info"></div>
-            <div class="b-pond b-pond-right" data-seat="1"></div>
-            <div class="b-pond b-pond-bottom" data-seat="0"></div>
+            <div class="b-pond b-pond-right" data-seat="1"><div class="b-pondin"></div></div>
+            <div class="b-pond b-pond-bottom" data-seat="0"><div class="b-pondin"></div></div>
             <div class="b-bubble pos-bottom" data-seat="0"></div>
             <div class="b-bubble pos-right" data-seat="1"></div>
             <div class="b-bubble pos-top" data-seat="2"></div>
@@ -198,7 +204,7 @@
 
     onClick(e) {
       const btn = e.target.closest('[data-act]');
-      if (btn && ['speed', 'sound', 'voice', 'quit'].indexOf(btn.dataset.act) >= 0) { this.onAction(btn.dataset.act, btn); return; }
+      if (btn && ['speed', 'sound', 'voice', 'quit', 'skipmatch'].indexOf(btn.dataset.act) >= 0) { this.onAction(btn.dataset.act, btn); return; }
       if (this._sceneNext) { if (e.target.closest('.b-scene')) this._sceneNext(); return; }
       if (this.busy) return;
       if (btn) { this.onAction(btn.dataset.act, btn); return; }
@@ -238,6 +244,12 @@
         case 'voice':
           Voice.setEnabled(!Voice.enabled);
           this.updateTools();
+          return;
+        case 'skipmatch':
+          // for readers who do not play mahjong: leave the table and let the story go on (asked twice, like quit)
+          if (btn.dataset.armed) { this.finish({ skipped: true, cleared: false }); return; }
+          btn.dataset.armed = '1'; btn.textContent = T('b.skipConfirm'); btn.classList.add('armed');
+          setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = T('b.skipMatch'); btn.classList.remove('armed'); } }, 2500);
           return;
         case 'quit':
           if (btn.dataset.armed) { this.finish({ aborted: true }); return; }
@@ -755,11 +767,13 @@
     renderSeat(r, seat) {
       const p = r.players[seat];
       const turn = r.turn === seat && !r.finished;
-      // Washizu mahjong: the glass tiles show, the opaque ones stay hidden (at the end, so their place gives nothing away)
+      // his hand stands on the table in front of him, along his edge. Washizu mahjong: the glass tiles show,
+      // the opaque ones stay hidden (at the end, so their place gives nothing away)
       const backs = r.glass
-        ? p.hand.filter(id => r.isGlass(id)).map(id => TileView.html(id, 'bk')).join('') +
-          p.hand.filter(id => !r.isGlass(id)).map(() => TileView.back('bk')).join('')
-        : new Array(p.hand.length + 1).join(TileView.back('bk'));
+        ? p.hand.filter(id => r.isGlass(id)).map(id => TileView.html(id, 'rl')).join('') +
+          p.hand.filter(id => !r.isGlass(id)).map(() => TileView.back('rl')).join('')
+        : new Array(p.hand.length + 1).join(TileView.back('rl'));
+      this.$('.b-rail[data-seat="' + seat + '"] .b-railrow').innerHTML = backs + p.melds.map(m => this.meldHtml(m, 'rl')).join('');
       const info = this._read;
       // a hand the player sees through: its waits are written on the seat
       let read = '';
@@ -780,8 +794,6 @@
           </div>
           ${this.gaugeHtml(seat)}${watching}${this.fundsHtml(seat)}
           ${this.riichiStick(p)}${read}
-          <div class="seat-hand">${backs}</div>
-          <div class="seat-melds">${p.melds.map(m => this.meldHtml(m, 'pt')).join('')}</div>
         </div>`;
     }
 
@@ -795,11 +807,29 @@
         `${BloodRack.html(shown, b.lethal, 'mini')}<span class="blood-label">${esc(T('blood.label', { drawn: shown, lethal: b.lethal }))}</span></div>`;
     }
 
+    /**
+     * Washizu mahjong: what a settlement screen shows beside the points - the stand with the blood drawn so
+     * far (what this hand costs is still to be drawn: "+400cc"), and the money Washizu has left, in bundles.
+     */
+    stakesHtml() {
+      const b = this.blood, m = this.money;
+      if (!b && !m) return '';
+      const pending = (b && this.bloodPending) || 0;
+      const shown = b ? b.drawn - pending : 0;
+      const blood = b ? `<div class="st-blood">${BloodRack.html(shown, b.lethal, 'big')}<div class="st-text">` +
+        `<div class="st-name">${esc(T('hud.blood.title'))}</div>` +
+        `<div class="st-cap"><b>${shown}</b> / ${b.lethal}cc${pending ? ` <span class="st-plus">+${pending}cc</span>` : ''}</div></div></div>` : '';
+      const money = m ? `<div class="st-money">${MoneyPile.html(m.funds, this.stage.money.total || 500000000, 'small')}<div class="st-text">` +
+        `<div class="st-name">${esc(T('hud.money.title', { name: this.name(m.seat) }))}</div>` +
+        `<div class="st-cap"><b>${esc(I18n.yen(m.funds))}</b><small>${esc(T('hud.money.unit'))}</small></div></div></div>` : '';
+      return `<div class="stakes-row">${blood}${money}</div>`;
+    }
+
     /** Washizu mahjong: the money the other side still has to lose */
     fundsHtml(seat) {
       const m = this.money;
       if (!m || m.seat !== seat) return '';
-      return `<div class="funds${this.fundsFlash ? ' flash' : ''}">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
+      return `<div class="funds${this.fundsFlash ? ' blink' : ''}">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
     }
 
     /** the rage gauge of a seat that owns a skill */
@@ -815,6 +845,10 @@
       if (skill === 'sleight') label += ' ×' + this.board.usesLeft(seat);
       const watch = this.board.watchOf(seat);
       const desc = watch != null ? T('skill.insight.watch', { target: this.name(watch) }) : T('skill.' + skill + '.desc');
+      if (this.board.passive(seat)) {      // a standing trait: its name, no gauge to fill
+        return `<div class="gauge passive ${active ? 'active' : ''}" title="${esc(T('skill.' + skill) + ' - ' + desc)}">` +
+          `<span class="gauge-icon skill-${skill}"></span><span class="gauge-label">${esc(label)}</span></div>`;
+      }
       return `<div class="gauge ${cls}" title="${esc(T('gauge.tip', { skill: T('skill.' + skill), desc }))}">` +
         `<span class="gauge-icon skill-${skill}"></span>` +
         `<span class="gauge-bar"><i style="--g:${active ? 100 : g}"></i></span>` +
@@ -834,7 +868,7 @@
         cells.push(TileView.html(d.tile, cls));
       }
       const rows = [cells.slice(0, 6), cells.slice(6, 12), cells.slice(12)];
-      this.$('.b-pond[data-seat="' + seat + '"]').innerHTML =
+      this.$('.b-pond[data-seat="' + seat + '"] .b-pondin').innerHTML =
         rows.map(row => `<div class="pond-row">${row.join('')}</div>`).join('');
     }
 
@@ -1009,7 +1043,10 @@
           ${mine ? `<p class="small">${T(Skills.DEFS[mine] && Skills.DEFS[mine].cost ? 'intro.skillCost' : 'intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(T('skill.' + mine + '.desc')) })}</p>` : ''}
           ${foeSkills ? `<ul class="role-list skill-list">${foeSkills}</ul>` : ''}
           ${st.opening ? `<p class="small opening-note">${esc(T(st.opening.auto || st.opening.kind === 'scene' ? 'intro.openingScene' : 'intro.opening'))}</p>` : ''}
-          <button class="btn btn-primary" data-ov="go">${esc(T('intro.go'))}</button>
+          <div class="intro-buttons">
+            <button class="btn btn-primary" data-ov="go">${esc(T('intro.go'))}</button>
+            ${this.opts.context === 'story' ? `<button class="btn" data-ov="skipmatch" title="${esc(T('b.skipTip'))}">${esc(T('intro.skip'))}</button>` : ''}
+          </div>
         </div>`);
     }
 
@@ -1049,6 +1086,7 @@
             <div class="result-total"><span>${esc(total)}</span><b>${fmt(res.pay.total)}</b></div>
             <div class="pay-text">${esc(payText)}</div>
             <table class="score-table">${scoreRows}</table>
+            ${this.stakesHtml()}
             <button class="btn btn-primary" data-ov="next">${nextLabel}</button>
           </div>`);
       }
@@ -1072,6 +1110,7 @@
             <h2>${esc(T(res.type === 'pause' ? 'res.pause' : 'res.exposed'))}</h2>
             ${body}
             <table class="score-table">${scoreRows}</table>
+            ${this.stakesHtml()}
             <button class="btn btn-primary" data-ov="next">${nextLabel}</button>
           </div>`);
       }
@@ -1089,6 +1128,7 @@
           <p class="small">${esc(T('res.drawText'))}</p>
           <div class="draw-list">${hands}</div>
           <table class="score-table">${scoreRows}</table>
+            ${this.stakesHtml()}
           <button class="btn btn-primary" data-ov="next">${nextLabel}</button>
         </div>`);
     }
@@ -1112,6 +1152,7 @@
           <div class="verdict" data-result="${cleared ? 'clear' : 'defeat'}">${esc(T(cleared ? 'fin.clear' : 'fin.defeat'))}</div>
           <p class="small">${esc(P(this.stage.goal.text))}</p>
           <table class="score-table final">${rows}</table>
+          ${this.stakesHtml()}
           <div class="btn-row">${buttons}</div>
         </div>`);
     }

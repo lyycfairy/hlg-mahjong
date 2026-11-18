@@ -8,7 +8,9 @@
  *   startWind / endWind   0 = East round, 1 = South round
  *   goal.check(final)     final = { scores, ranking, place } -> cleared?
  *   ai           one entry per seat (null for the human), see js/mahjong/ai.js:
- *                  style   'aggressor' | 'collaborator' | 'independent' - chosen to fit the story
+ *                  style   'aggressor' | 'collaborator' | 'independent' | 'supporter' - chosen to fit the story
+ *                          (a supporter is the partner of Washizu mahjong: `ally` is whom he plays for, `foe`
+ *                          the enemy he gives nothing to, `feedDama` lets him feed a silent ready hand too)
  *                  level   0..1 playing strength
  *                  ally    (collaborator) the seat he plays for;  signal  how reliably they pass signals;
  *                          feed  how readily he gives a big hand to the ally
@@ -78,12 +80,14 @@
     names: [N.akagi, N.yasuoka, N.washizu, N.suzuki],
     who: ['akagi19', 'yasuoka', 'washizu', 'suzuki'],
     portraits: ['akagi19', 'yasuoka', 'washizu', 'suzuki'],
-    // Yasuoka plays for Akagi and Suzuki for Washizu; the monster himself swings for the kill
+    // Two against two. Yasuoka plays Akagi's hand and Suzuki plays Washizu's - neither plays his own:
+    // they hold what their man needs, pass him what he can pon, feed him on riichi or when the other
+    // side presses, and give the enemy nothing. The monster himself swings for the kill.
     ai: [
       null,
-      { style: 'collaborator', level: 0.75, ally: 0, signal: 0.8, feed: 0.8 },
+      { style: 'supporter', level: 0.9, ally: 0, foe: 2 },
       { style: 'aggressor', level: 0.8 },
-      { style: 'collaborator', level: 0.7, ally: 2, signal: 0.8, feed: 0.6 },
+      { style: 'supporter', level: 0.9, ally: 2, foe: 0, feedDama: true },
     ],
   };
 
@@ -100,7 +104,7 @@
         { skill: 'allin', gauge: 100 },
         null,
         { skill: 'fortune', gauge: 20 },
-        { skill: 'collusion', gauge: 100, watch: 2 },
+        { skill: 'collusion', watch: 2 },
       ],
       hands: 1,
       opening: {
@@ -181,9 +185,9 @@
       // both partners now feed on riichi; Washizu's luck is coming back to him
       skills: [
         { skill: 'allin', gauge: 50 },
-        { skill: 'collusion', gauge: 100, watch: 0 },
+        { skill: 'collusion', watch: 0 },
         { skill: 'fortune', gauge: 30 },
-        { skill: 'collusion', gauge: 100, watch: 2 },
+        { skill: 'collusion', watch: 2 },
       ],
       scores: [25000, 25000, 25000, 25000],
       firstDealer: 2,

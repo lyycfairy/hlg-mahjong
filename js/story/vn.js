@@ -288,7 +288,7 @@
         `<span class="vs-won" data-vs="won">${esc(I18n.t('hud.won', { n: I18n.yen(s.won) }))}</span></div>` +
         `<div class="vs vs-money">${name(s.payer || 'washizu')}<span class="vs-funds" data-vs="funds">${esc(I18n.t('hud.funds', { n: I18n.yen(s.funds) }))}</span></div>`;
       box.classList.toggle('near', s.blood >= BloodRack.DANGER);
-      if (this.rackAt === 'live') this.drawRack(s.blood);
+      if (this.rackAt != null) this.drawRack(this.rackAt === 'live' ? s.blood : (this.rackShown || 0));
     }
 
     /** count the ledger on screen from one state to another */
@@ -313,7 +313,7 @@
     flashStakes(part) {
       const el = this.$('.vn-stakes [data-vs="' + part + '"]');
       if (!el) return;
-      el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+      el.classList.remove('blink'); void el.offsetWidth; el.classList.add('blink');
     }
 
     /** { stakes: {...} } sets the ledger (tween: true counts up to it); { stakes: false } puts it away */
@@ -366,15 +366,31 @@
       await this.pause(250);
     }
 
+    /**
+     * The stakes prop: the stand cut from the painting, filled to `level` - and, once the ledger is on screen,
+     * Washizu's money beside it: a bundle of banknotes for every ten million yen he has left.
+     */
     drawRack(level) {
       const box = this.$('.vn-rack');
-      const lethal = (this.stakes && this.stakes.lethal) || 2000;
-      if (!box.firstChild) {
-        box.innerHTML = `${BloodRack.html(0, lethal, 'big')}<div class="vr-count"><b>0</b><span> / ${lethal}cc</span></div>`;
-        this.rackShown = 0;
+      const s = this.stakes;
+      const lethal = (s && s.lethal) || 2000;
+      const mode = s ? 'money' : 'blood';
+      if (box.dataset.mode !== mode || !box.firstChild) {
+        const payer = s && Characters[s.payer || 'washizu'];
+        box.dataset.mode = mode;
+        box.innerHTML =
+          `<div class="vr-panel vr-blood">${BloodRack.html(this.rackShown || 0, lethal, 'big')}` +
+          `<div class="vr-count"><b>${Math.round(this.rackShown || 0)}</b><span> / ${lethal}cc</span></div></div>` +
+          (s ? `<div class="vr-panel vr-money"><div class="vr-money-name">${esc(I18n.t('hud.money.title', { name: payer ? I18n.pick(payer.name) : '' }))}</div>` +
+            `${MoneyPile.html(s.funds, s.total)}<div class="vr-funds"></div></div>` : '');
+      }
+      if (s) {
+        MoneyPile.set(box.querySelector('.pile'), s.funds);
+        box.querySelector('.vr-funds').innerHTML = `${esc(I18n.yen(s.funds))}<small>${esc(I18n.t('hud.money.unit'))}</small>`;
       }
       const rack = box.querySelector('.rack'), num = box.querySelector('.vr-count b');
       const from = this.rackShown || 0;
+      if (from === level && rack._rackTween) return;                 // already on its way there
       this.rackShown = level;
       BloodRack.tween(rack, from, level, this.skip || from === level ? 0 : Math.min(2600, 500 + Math.abs(level - from) * 2.2), v => {
         num.textContent = Math.round(v);
@@ -389,7 +405,7 @@
     setRack(v) {
       const box = this.$('.vn-rack');
       if (v === false || v == null) {
-        box.hidden = true; box.innerHTML = '';
+        box.hidden = true; box.innerHTML = ''; delete box.dataset.mode;
         this.rackAt = null; this.rackShown = 0;
         this.el.classList.remove('has-rack');
         return;
@@ -682,6 +698,8 @@
       if (this.dead) return new Promise(() => {});
       this.paused = false;
       this.flags.opening = (res && res.opening) || null;    // what the player did at the opening decision
+      // skipped at the table: the story goes on as it does when the match is won (or where the script says)
+      if (res && res.skipped) { this.jump(cmd.skip || cmd.win); return; }
       // a cleared match of Washizu mahjong leaves its blood and money on the story's ledger
       if (res && res.cleared && this.stakes) {
         this.stakes = Stakes.afterBattle(this.stakes, Stages.get(cmd.battle), res.final);

@@ -34,7 +34,9 @@
  *                                                    (shown, and spoken by js/voice.js)
  *                                            options [{ id, tiles: '7p' | '*', goto }]  branch per tile
  *                                            flag    remembers the chosen option id for { branch }
- *   { battle: 'stageId', win: 'label', lose: 'label' }
+ *   { battle: 'stageId', win: 'label', lose: 'label', skip: 'label' }
+ *                                            the player may skip a match from the table: the story then
+ *                                            goes to `skip` (the win label if none is given)
  *                                            afterwards the flag 'opening' holds what the player chose
  *                                            at the stage's opening decision (see js/data/stages.js)
  *   { branch: 'flag', to: { value: 'label', '*': 'label' } }

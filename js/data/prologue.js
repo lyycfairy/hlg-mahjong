@@ -196,7 +196,7 @@
       { rack: 200, text: Z('两百。') },
       { rack: 300, text: Z('三百……') },
       { text: Z('透明的量筒里，暗红色的液体一格一格地往上涨。') },
-      { rack: 400, text: Z('那是一个活人的血。八根量筒，一共两千cc——全部抽满，那个人就会死。') },
+      { rack: 400, text: Z('那是一个活人的血。四根量筒，一共两千cc——全部抽满，那个人就会死。') },
       { text: Z('针头还扎在青年的手臂上。他的脸白得像纸，眼睛却一眨也不眨。') },
       { who: 'akagi19', emo: 'flat', text: Z('……下一局。') },
       { rack: false },
@@ -246,9 +246,9 @@
       { text: Z('赌注，只算在赤木和鹫巢两个人之间。') },
       { text: Z('鹫巢赌的是钱。赤木赌的，是血。') },
       { text: Z('鹫巢自摸，或者直接和赤木打出的牌——赤木输给他多少点，就当场从手臂上抽多少血。') },
-      { rack: 250, text: Z('一根量筒，二百五十cc。') },
-      { rack: 1500, text: Z('抽到一千五百cc，人就进入危险区。') },
-      { rack: 2000, text: Z('八根全满，两千cc——必死无疑。') },
+      { rack: 500, text: Z('一根量筒，五百cc。') },
+      { rack: 1500, text: Z('抽到一千五百cc，三根全满，人就进入危险区。') },
+      { rack: 2000, text: Z('四根全满，两千cc——必死无疑。') },
       { rack: 0, text: Z('一共打六个半庄。每个半庄结束时，两人还要按点差和名次再结算一次。') },
       { rack: false },
 
@@ -360,7 +360,7 @@
       { rack: true },
       { text: Z('第一次抽血。针头，扎进了赤木的手臂。') },
       { bleed: 400 },
-      { text: Z('四百cc。第一根量筒满了，第二根也过了一半。') },
+      { text: Z('四百cc。第一根量筒，眼看就要满了。') },
       { who: 'washizu', emo: 'joy', text: Z('好颜色……年轻人的血，就是好看。') },
       { who: 'akagi19', emo: 'flat', text: Z('……下一局。') },
 
@@ -372,7 +372,7 @@
       { hide: 'all' },
       { bg: 'washizu' },
       { text: Z('南一局。赤木二万六千点，鹫巢四万点。') },
-      { battle: 'ambush', win: 'ambush_win', lose: 'ambush_lose' },
+      { battle: 'ambush', win: 'ambush_win', lose: 'ambush_lose', skip: 'ambush_skip' },
 
       { label: 'ambush_lose' },
       { bg: 'washizu' },
@@ -434,7 +434,7 @@
       { text: Z('赤木没有打一筒，拆掉了听牌。他读对了——可鹫巢随即改听立直，一发自摸。') },
       { who: 'washizu', emo: 'mock', text: Z('看穿了又怎么样？看穿了，也照样会输。这就是麻将！') },
       { bleed: 200 },
-      { text: Z('又是两百cc。六百——第三根量筒，也见了红。') },
+      { text: Z('又是两百cc。六百——第一根量筒满了，第二根也见了红。') },
       { rack: false },
 
       /* ------------------------------------------------ South 4: three pons on a hand that is not ready */
@@ -481,7 +481,7 @@
       { bg: 'blood' },
       { rack: true },
       { stakes: LEDGER.first, tween: true, text: Z('结算。这一个半庄，赤木从鹫巢手里赢走了五千二百五十万日元。') },
-      { text: Z('白西装的男人们按规矩备好了针管：从奖金里扣下六百万，就能把抽走的六百cc血补回去。') },
+      { text: Z('黑衣的男人们按规矩备好了针管：从奖金里扣下六百万，就能把抽走的六百cc血补回去。') },
       { who: 'ogi', emo: 'urgent', face: 'tense', text: Z('快补上吧，赤木。带着六百cc的亏空进下一个半庄，被鹫巢直击一次满贯，就是一千四百cc了！') },
       { choice: [
         { text: Z('补回六百cc'), goto: 'transfuse' },
@@ -770,7 +770,7 @@
       { text: Z('第三个半庄，第四个半庄。鹫巢连一次像样的反击都没有。') },
       { text: Z('赤木一次也没有放铳给他。被抽走的血，全是鹫巢自摸时摊到的那一份。') },
       { bleed: 300 },
-      { text: Z('一千四百cc。第六根量筒，眼看就要满了。') },
+      { text: Z('一千四百cc。第三根量筒，眼看就要满了——再往后，就是最后一根。') },
       { stakes: LEDGER.fourth, tween: true, text: Z('四个半庄打完，鹫巢已经输掉了三亿一千三百五十万日元。') },
 
       /* ------------------------------------------------ the basin */
@@ -844,7 +844,7 @@
       /* ------------------------------------------------ the fifth hanchan */
       { label: 'final' },
       { stakes: LEDGER.fifth },
-      { battle: 'resolve', win: 'final_win', lose: 'final_lose' },
+      { battle: 'resolve', win: 'final_win', lose: 'final_lose', skip: 'final_win' },
 
       { label: 'final_lose' },
       { bg: 'blood' },
