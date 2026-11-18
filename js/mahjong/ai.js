@@ -294,6 +294,7 @@
 
     function onTurn(round, seat, opts) {
       if (opts.canTsumo) return { type: 'tsumo' };
+      if (opts.feed != null && round.players[seat].hand.indexOf(opts.feed) >= 0) return { type: 'discard', tile: opts.feed, riichi: false };
       const p = round.players[seat];
       if (p.riichi) return { type: 'discard', tile: p.drawn, riichi: false };
 
@@ -438,6 +439,10 @@
         if (p.riichi) return false;                                       // nothing left to decide
         const foe = q => q.seat !== seat && !(P.style === 'collaborator' && q.seat === P.ally);
         return round.players.some(q => foe(q) && (q.riichi || q.melds.length >= 2)) || p.discards.length >= 6;
+      }
+      if (skill === 'fortune') {
+        // Washizu calls on his luck when he is far from ready: two perfect draws make him ready, no more
+        return !p.riichi && round.wall.length >= 8 && Hand.shanten(Tiles.counts(p.hand.map(typeOf)), p.melds.length) === 2;
       }
       if (skill === 'flow') {
         if (round.wall.length < 8) return false;

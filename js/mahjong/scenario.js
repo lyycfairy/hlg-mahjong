@@ -14,6 +14,8 @@
  *   rivers   { seat: '1z9m...' }      fixed ponds, in order (required for a fixed hand)
  *   riichi   { seat: index }          discard on which a fixed-hand seat declared riichi
  *   draws    ['8p', ...]              the next tiles to come off the wall, in order
+ *   opaque   { seat: '3z' }           Washizu mahjong: these tiles of a fixed hand are the opaque copy
+ *                                     (the one of each four that nobody can see through)
  *   discarded { seat: '5z' }          tiles a generated seat has already thrown (placed early in its
  *                                     pond, the rest of the pond is played forward as usual)
  *   avoid    '5p8p'                   types the generated seats never discard (optional)
@@ -29,6 +31,29 @@
   const Hand = isNode ? require('./hand.js') : root.Hand;
 
   const typeOf = id => id >> 2;
+
+  /**
+   * A computer player whose first turn(s) a scene scripts. forced: [{ seat, discard, riichi }] -
+   * discard 'drawn' throws the tile just drawn, a code ('5m') throws that tile (declaring riichi
+   * if `riichi` is set and the rules allow it). Turns after the scripted ones are the agent's own.
+   */
+  function scripted(agent, forced, seat) {
+    const mine = forced.filter(f => f.seat === seat);
+    if (!mine.length) return agent;
+    return Object.assign({}, agent, {
+      onTurn: (round, s, opts) => {
+        const f = mine.shift();
+        const p = round.players[s];
+        if (f && f.discard === 'drawn' && p.drawn != null) return { type: 'discard', tile: p.drawn, riichi: false };
+        if (f && f.discard && f.discard !== 'drawn') {
+          const t = Tiles.parse(f.discard)[0];
+          const id = p.hand.find(x => typeOf(x) === t);
+          if (id != null) return { type: 'discard', tile: id, riichi: !!f.riichi && opts.riichiDiscards.indexOf(id) >= 0 };
+        }
+        return agent.onTurn(round, s, opts);
+      },
+    });
+  }
 
   /** which tile a random hand lets go of while it is played forward */
   function dropFrom(hand, avoid) {
@@ -61,6 +86,12 @@
       return free[t].pop();
     };
     const takeAll = str => Tiles.parse(str || '').map(take);
+    // the opaque copy of a kind is its id t*4 (Round.isGlass); a scene can hand it to a seat on purpose
+    const takeOpaque = t => {
+      const i = free[t].indexOf(t * 4);
+      if (i < 0) throw new Error('the opaque ' + Tiles.code(t) + ' is already taken');
+      return free[t].splice(i, 1)[0];
+    };
     const pos = s => (s - spec.dealer + 4) % 4;
     const n = spec.n || 0;
     const riverLen = s => n + (pos(s) < pos(spec.turn) ? 1 : 0);
@@ -70,8 +101,15 @@
     const hands = [null, null, null, null];
     const discards = [[], [], [], []];
     const fixed = Object.keys(spec.hands || {}).map(Number);
+    // opaque tiles first, so that no other seat takes them by chance
+    const opaqueOf = {};
+    for (const s of Object.keys(spec.opaque || {}).map(Number)) opaqueOf[s] = Tiles.parse(spec.opaque[s]).map(takeOpaque);
     for (const s of fixed) {
-      hands[s] = takeAll(spec.hands[s]);
+      const dark = (opaqueOf[s] || []).slice();
+      hands[s] = Tiles.parse(spec.hands[s]).map(t => {
+        const k = dark.findIndex(id => (id >> 2) === t);
+        return k >= 0 ? dark.splice(k, 1)[0] : take(t);
+      });
       if (hands[s].length !== 13) throw new Error('scenario hand for seat ' + s + ' must have 13 tiles');
       const river = takeAll((spec.rivers || {})[s]);
       if (river.length !== riverLen(s)) throw new Error('scenario pond for seat ' + s + ' must have ' + riverLen(s) + ' tiles');
@@ -125,7 +163,7 @@
     return { hands, discards, wall, deadWall, turn: spec.turn, safe, ippatsu };
   }
 
-  const Scenario = { build };
+  const Scenario = { build, scripted };
   if (isNode) module.exports = Scenario;
   else root.Scenario = Scenario;
 })(typeof window !== 'undefined' ? window : globalThis);

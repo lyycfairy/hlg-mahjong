@@ -665,6 +665,6 @@
   root.Story = {
     chapters: [chapter1],
     get(id) { return this.chapters.find(c => c.id === id); },
-    add(...chapters) { this.chapters.push(...chapters); },
+    add(...chapters) { this.chapters.push(...chapters); this.chapters.sort((a, b) => a.no - b.no); },   // a prologue is no 0
   };
 })(window);

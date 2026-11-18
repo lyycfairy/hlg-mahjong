@@ -19,6 +19,11 @@
     thug:    { name: L('Thug', 'チンピラ', '打手'),  color: '#9ea6ae', faces: ['sneer', 'angry', 'stunned'] },
     yasuoka: { name: L('Yasuoka', '安岡', '安冈'),   color: '#c9b37a', faces: ['wry', 'suspicious', 'neutral'] },
     yagi:    { name: L('Yagi', '矢木', '矢木'),      color: '#8fc1a9', faces: ['smile', 'focus', 'rattled'] },
+    // the prologue, six years later (1965): `voice` says whose recordings a character speaks with
+    akagi19: { name: L('Akagi', 'アカギ', '赤木'),   color: '#e6edf5', faces: ['calm', 'smirk', 'glare'], voice: 'akagi' },
+    washizu: { name: L('Washizu', '鷲巣', '鹫巢'),   color: '#d6c27a', faces: ['sneer', 'rage', 'manic'] },
+    ogi:     { name: L('Ogi', '仰木', '仰木'),       color: '#c98a6b', faces: ['calm', 'tense', 'shock'] },
+    suzuki:  { name: L('Suzuki', '鈴木', '铃木'),    color: '#e8e8e8', faces: ['blank', 'tense', 'nod'] },
   };
 
   /* shared anatomy -------------------------------------------------- */

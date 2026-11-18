@@ -89,6 +89,17 @@
     'skill.confusion.desc': 'Strike while minds are elsewhere: until your next turn every opponent stops thinking - nobody guards against you, fires a skill or fills a gauge.',
     'skill.notice': 'Second Look',
     'skill.notice.desc': 'Fires by itself when the gauge is full: he takes a second look at the ponds and sees that tiles have been switched. The hand is voided.',
+    'skill.allin': 'All In',
+    'skill.allin.desc': 'Stake everything on one throw: for the rest of the hand the blood and the money riding on it are doubled - win, and Washizu pays twice over; lose, and twice the blood is drawn.',
+    'skill.fortune': 'Heaven\'s Favour',
+    'skill.fortune.desc': 'Washizu\'s monstrous luck: his next two draws are the best tiles left.',
+    'skill.collusion': 'Inside Job',
+    'skill.collusion.desc': 'Fires by itself: the moment his partner declares riichi, he throws him the winning tile, if he holds one.',
+    'blood.label': 'Blood drawn {drawn} / {lethal}cc',
+    'blood.tip': 'For every 1,000 points Washizu takes from Akagi - by self-draw, or by winning on his discard - 100cc of blood is drawn. At {lethal}cc he dies.',
+    'blood.draw': '{cc}cc of blood drawn. {total} / {lethal}cc in all.',
+    'blood.dead': '{lethal}cc. {name}\'s heart has stopped.',
+    'money.funds': 'Funds {n}',
     'gauge.tip': 'Rage gauge - fills on drawing, calling, riichi, winning and being hit. When full: {skill}. {desc}',
     'act.skill': '{skill}!',
     'read.waits': 'waits',
@@ -349,6 +360,17 @@
     'skill.confusion.desc': 'みんなの意識がよそにある今のうちに。次の自分の番まで、相手全員が思考停止になる——警戒もせず、スキルも撃てず、ゲージも溜まらない。',
     'skill.notice': '気づき',
     'skill.notice.desc': 'ゲージが満タンになると自動で発動。河を見直し、牌がすり替えられていることに気づく。その局は無効になる。',
+    'skill.allin': '一か八か',
+    'skill.allin.desc': 'すべてを一度に賭ける。その局が終わるまで、賭けられた血と金が倍になる——勝てば鷲巣は倍を払い、負ければ倍の血を抜かれる。',
+    'skill.fortune': '天運',
+    'skill.fortune.desc': '鷲巣の怪物じみた強運。次の二回のツモが、残りの中で最良の牌になる。',
+    'skill.collusion': '差し込み',
+    'skill.collusion.desc': '自動で発動。相棒がリーチをかけた瞬間、当たり牌を持っていればそれを打ち込む。',
+    'blood.label': '採血 {drawn} / {lethal}cc',
+    'blood.tip': '鷲巣にツモられるか直撃されるたび、1000点につき100ccの血を抜かれる。{lethal}ccで死ぬ。',
+    'blood.draw': '{cc}ccの血が抜かれた。累計 {total} / {lethal}cc。',
+    'blood.dead': '{lethal}cc。{name}の心臓が止まった。',
+    'money.funds': '資金 {n}',
     'gauge.tip': '怒気ゲージ——ツモ、鳴き、リーチ、アガリ、振り込みで溜まる。満タンで「{skill}」を発動できる。{desc}',
     'act.skill': '{skill}発動',
     'read.waits': '待ち',
@@ -608,6 +630,17 @@
     'skill.confusion.desc': '趁水浑的时候摸鱼，比喻趁着混乱捞取好处。发动后直到你的下一巡，对手全员陷入思考停滞：不提防你、不能发动技能，怒气也不再积累。',
     'skill.notice': '明察秋毫',
     'skill.notice.desc': '目光锐利得连秋天鸟兽新长的细毛都看得清，比喻能洞察极细微的事情。怒气蓄满时自动发动：他重新审视牌河，识破被调换的牌，这一局作废。',
+    'skill.allin': '孤注一掷',
+    'skill.allin.desc': '把剩下的所有钱一次押上，比喻在危急关头拿出全部力量冒险一搏。发动后直到这一局结束，这一局押上的血与钱都翻倍——赢了，鹫巢付双倍的钱；输了，抽双倍的血。',
+    'skill.fortune': '洪福齐天',
+    'skill.fortune.desc': '福气大得与天一样高。鹫巢那怪物般的强运：发动后，接下来的两次摸牌都是剩下的牌里最好的。',
+    'skill.collusion': '里应外合',
+    'skill.collusion.desc': '外面进攻，里面接应，比喻内外勾结、互相配合。自动发动：搭档一立直，只要手里有对方要和的牌，他立刻打出去喂和。',
+    'blood.label': '已抽血 {drawn} / {lethal}cc',
+    'blood.tip': '鹫巢每从赤木身上拿走1000点（自摸，或直接和赤木打出的牌），就从赤木身上抽100cc血。抽满{lethal}cc即死。',
+    'blood.draw': '抽血{cc}cc。累计 {total} / {lethal}cc。',
+    'blood.dead': '{lethal}cc。{name}的心跳停止了。',
+    'money.funds': '资金 {n}',
     'gauge.tip': '怒气槽——摸牌、鸣牌、立直、和牌、放铳都会积累。蓄满后可发动“{skill}”。{desc}',
     'act.skill': '发动{skill}',
     'read.waits': '听',
@@ -833,6 +866,22 @@
       if (typeof v === 'function') return v(vars || {});
       if (!vars) return v;
       return v.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    },
+
+    /** 'Chapter 3' / 'Stage 2' - or the item's own label (a prologue says 序章 instead of a number) */
+    numberOf(item, kind) {
+      return item.label ? I18n.pick(item.label) : I18n.t(kind + '.no', { n: item.no });
+    },
+
+    /** an amount of yen: '¥535,000,000' / '5億3500万円' / '5亿3500万日元' */
+    yen(n) {
+      n = Math.round(n);
+      if (I18n.lang === 'en') return (n < 0 ? '-¥' : '¥') + Math.abs(n).toLocaleString('en-US');
+      const neg = n < 0; n = Math.abs(n);
+      const oku = Math.floor(n / 1e8), man = Math.floor((n % 1e8) / 1e4), rest = n % 1e4;
+      const ja = I18n.lang === 'ja';
+      const out = (oku ? oku + (ja ? '億' : '亿') : '') + (man ? man + '万' : '') + (rest || (!oku && !man) ? rest : '');
+      return (neg ? '-' : '') + out + (ja ? '円' : '日元');
     },
 
     /** choose from a localized value such as { en, ja, zh }; text not written in this language yet falls back */

@@ -43,7 +43,10 @@
       this.last = !!opts.last;                // final scheduled hand of the match (the AI plays for placement)
       // stop the hand after `seat` has made `discards` discards in it - a story scene takes over
       this.pauseAfter = opts.pauseAfter || null;
-      this.exposed = null;                    // set by the 'notice' skill: the hand is voided
+      this.exposed = null;
+      // Washizu mahjong: of every tile's four copies only one is opaque, the other three are glass,
+      // and a glass tile is seen by everybody even in a hand (Round.isGlass)
+      this.glass = !!opts.glass;                    // set by the 'notice' skill: the hand is voided
 
       this.players = [0, 1, 2, 3].map(seat => ({
         seat,
@@ -70,6 +73,9 @@
       this.finished = false;
       this.result = null;
     }
+
+    /** is this tile one of the three glass copies (in a Washizu-mahjong round)? */
+    isGlass(id) { return this.glass && id % 4 !== 0; }
 
     seatWind(seat) { return 27 + ((seat - this.dealer + 4) % 4); }
     roundWindTile() { return 27 + this.roundWind; }
@@ -358,7 +364,8 @@
         p.discardedTypes.add(typeOf(tile));
         p.safe.add(typeOf(tile));
         await this.emit({ type: 'discard', seat, tile, riichi: declaring, tsumogiri });
-        if (this.pauseAfter && seat === this.pauseAfter.seat && --this.pauseAfter.discards <= 0) return this.pause(seat);
+        const pauseNow = this.pauseAfter && seat === this.pauseAfter.seat && --this.pauseAfter.discards <= 0;
+        if (pauseNow && !this.pauseAfter.react) return this.pause(seat);
 
         /* ---- reactions ---- */
         const order = [1, 2, 3].map(i => (seat + i) % 4);
@@ -376,6 +383,8 @@
           if (declaring) { p.riichi = false; p.ippatsu = false; p.doubleRiichi = false; } // riichi never completed
           return this.win(ronSeat, seat, tile, options[ronSeat].ronResult, false);
         }
+
+        if (pauseNow) return this.pause(seat);        // nobody won on it: the scene takes over
 
         // anyone who let a winning tile go by is now furiten
         for (const s of order) {
@@ -523,7 +532,8 @@
   class Match {
     /**
      * opts: { agents, scores, firstDealer, startWind, startKyoku, endWind, rng, onEvent,
-     *         setup, skills, maxHands, pauseAfter }
+     *         setup, skills, maxHands, pauseAfter, glass, stopWhen }
+     * `stopWhen()` is asked after every hand (and its round-end event): true ends the match there.
      * The match ends after the last hand of `endWind`, when someone goes below zero, or after
      * `maxHands` hands. The final result lists every hand's result in `results`.
      * `setup` (an object, or a function of the dealer seat returning one) applies to
@@ -547,6 +557,8 @@
       this.skills = opts.skills || null;
       this.results = [];
       this.pauseAfter = opts.pauseAfter || null;   // first hand only, like setup
+      this.glass = !!opts.glass;                    // Washizu mahjong for every hand
+      this.stopWhen = opts.stopWhen || null;
     }
 
     standings() {
@@ -568,7 +580,7 @@
           honba: this.honba, riichiSticks: this.riichiSticks,
           scores: this.scores, agents: this.agents, rng: this.rng,
           onEvent: this.onEvent,
-          setup, skills: this.skills,
+          setup, skills: this.skills, glass: this.glass,
           pauseAfter: this.handsPlayed === 0 && this.pauseAfter ? Object.assign({}, this.pauseAfter) : null,
           last: this.wind === this.endWind && this.kyoku === 3,
         });
@@ -604,6 +616,7 @@
         }
 
         await this.onEvent({ type: 'round-end', result: res, over }, round);
+        if (!over && this.stopWhen && this.stopWhen()) over = true;
         if (over) break;
       }
 

@@ -39,6 +39,10 @@
       this.opening = stage.opening || null;
       this.openingStage = this.opening ? 'pending' : 'done';   // pending -> later (lines after the hand) -> done
       this.openingOption = null;
+      // Washizu mahjong stakes: the player's blood (cc drawn per 1000 points paid to `from`) and the
+      // other side's money (yen per point received from the player) - see stages.js `blood` / `money`
+      this.blood = stage.blood ? Object.assign({ drawn: 0 }, stage.blood) : null;
+      this.money = stage.money ? Object.assign({}, stage.money) : null;
       this.busy = false;     // a cut-in or scene is playing: ignore the table
       this.selected = null;
       this.hoverType = null;
@@ -66,6 +70,8 @@
         startKyoku: st.startKyoku || 0,
         endWind: st.endWind,
         maxHands: st.hands || undefined,
+        glass: !!st.glass,
+        stopWhen: () => !!(this.blood && this.blood.dead),
         pauseAfter: st.pause || null,
         skills: this.board,
         setup: this.opening ? dealer => Scenario.build(Object.assign({ dealer }, this.opening.scenario)) : null,
@@ -80,6 +86,8 @@
         return;
       }
       if (this.aborted) return;
+      final.blood = this.blood;
+      final.money = this.money;
       const cleared = !!st.goal.check(final);
       if (cleared) Save.clearStage(st.id);
       const choice = await this.showFinal(final, cleared);
@@ -88,23 +96,14 @@
 
     /** a computer player whose first action(s) the opening scripts */
     scripted(seat, agent) {
-      const forced = ((this.opening && this.opening.forced) || []).filter(f => f.seat === seat);
-      if (!forced.length) return agent;
-      return Object.assign({}, agent, {
-        onTurn: (round, s, opts) => {
-          const f = forced.shift();
-          if (f && f.discard === 'drawn' && round.players[s].drawn != null) {
-            return { type: 'discard', tile: round.players[s].drawn, riichi: false };
-          }
-          return agent.onTurn(round, s, opts);
-        },
-      });
+      return Scenario.scripted(agent, (this.opening && this.opening.forced) || [], seat);
     }
 
     finish(result) {
       if (this._finished) return;
       this._finished = true;
       this.aborted = true;
+      TileView.setGlass(false);
       Voice.stop();
       document.removeEventListener('keydown', this._key);
       this._done(result);
@@ -122,13 +121,14 @@
     /* ---------------------------------------------------------------- */
 
     mount() {
+      TileView.setGlass(!!this.stage.glass);
       this.host.innerHTML = '';
       const el = document.createElement('div');
       el.className = 'battle';
       const st = this.stage;
       el.innerHTML = `
         <header class="b-top">
-          <div class="b-stage"><span class="b-stage-no">${esc(T('stage.no', { n: st.no }))}</span>${esc(P(st.title))}</div>
+          <div class="b-stage"><span class="b-stage-no">${esc(I18n.numberOf(st, 'stage'))}</span>${esc(P(st.title))}</div>
           <div class="b-goal" title="${esc(T('b.goalTip'))}">◆ ${esc(P(st.goal.text))}</div>
           <div class="b-tools">
             <button class="btn-ghost" data-act="speed"></button>
@@ -376,6 +376,38 @@
         this.tenpaiMap = r.tenpaiDiscards(0);
       }
       this.render();
+    }
+
+    /**
+     * Washizu mahjong: what a finished hand cost in blood and money. Blood is drawn the moment the
+     * player pays the blood-taker (a deal-in, or his share of a self-drawn win); money moves the other way.
+     */
+    settleStakes(res) {
+      const out = { cc: 0, yen: 0 };
+      if (!res || res.type !== 'win') return out;
+      const b = this.blood, m = this.money;
+      const times = b ? this.board.stakes(b.seat) : 1;       // All In doubles what rides on the hand
+      if (b && res.winner === b.from && res.deltas[b.seat] < 0) {
+        out.cc = Math.round(-res.deltas[b.seat] / 1000 * b.cc) * times;
+        b.drawn += out.cc;
+        if (b.drawn >= b.lethal) b.dead = true;
+      }
+      if (m && res.winner === m.to && res.deltas[m.seat] < 0) {
+        out.yen = -res.deltas[m.seat] * m.perPoint * times;
+        m.funds -= out.yen;
+      }
+      return out;
+    }
+
+    /** the blood leaving the player's arm: a red pulse and a line for every draw */
+    async bloodScene(stakes) {
+      if (!stakes || !stakes.cc) return;
+      const b = this.blood;
+      this.el.classList.remove('bleeding'); void this.el.offsetWidth; this.el.classList.add('bleeding');
+      Sfx.riichi();
+      await this.scene([{ note: T('blood.draw', { cc: stakes.cc, total: b.drawn, lethal: b.lethal }) }]
+        .concat(b.dead ? [{ note: T('blood.dead', { name: this.name(b.seat), lethal: b.lethal }) }] : []));
+      this.el.classList.remove('bleeding');
     }
 
     /** what the player currently sees through: who is ready, on what, and which own tiles deal in */
@@ -644,11 +676,14 @@
           this.render();
           await this.wait(500);
           break;
-        case 'round-end':
+        case 'round-end': {
+          const stakes = this.settleStakes(evt.result);
           this.render();
-          await this.showRoundResult(evt.result, round, evt.over);
+          await this.showRoundResult(evt.result, round, evt.over || !!(this.blood && this.blood.dead));
+          await this.bloodScene(stakes);
           await this.openingAftermath(evt.result);
           break;
+        }
         case 'match-end':
           break;
       }
@@ -716,7 +751,11 @@
     renderSeat(r, seat) {
       const p = r.players[seat];
       const turn = r.turn === seat && !r.finished;
-      const backs = new Array(p.hand.length + 1).join(TileView.back('bk'));
+      // Washizu mahjong: the glass tiles show, the opaque ones stay hidden (at the end, so their place gives nothing away)
+      const backs = r.glass
+        ? p.hand.filter(id => r.isGlass(id)).map(id => TileView.html(id, 'bk')).join('') +
+          p.hand.filter(id => !r.isGlass(id)).map(() => TileView.back('bk')).join('')
+        : new Array(p.hand.length + 1).join(TileView.back('bk'));
       const info = this._read;
       // a hand the player sees through: its waits are written on the seat
       let read = '';
@@ -735,11 +774,27 @@
               <div class="seat-score">${fmt(r.scores[seat])}</div>
             </div>
           </div>
-          ${this.gaugeHtml(seat)}${watching}
+          ${this.gaugeHtml(seat)}${watching}${this.fundsHtml(seat)}
           ${this.riichiStick(p)}${read}
           <div class="seat-hand">${backs}</div>
           <div class="seat-melds">${p.melds.map(m => this.meldHtml(m, 'pt')).join('')}</div>
         </div>`;
+    }
+
+    /** Washizu mahjong: how much blood has been drawn from this seat, against the lethal line */
+    bloodHtml(seat) {
+      const b = this.blood;
+      if (!b || b.seat !== seat) return '';
+      const pct = Math.min(100, Math.round(b.drawn / b.lethal * 100));
+      return `<div class="blood ${pct >= 80 ? 'near' : ''}" title="${esc(T('blood.tip', { lethal: b.lethal }))}">` +
+        `<span class="blood-bar"><i style="--b:${pct}"></i></span><span class="blood-label">${esc(T('blood.label', { drawn: b.drawn, lethal: b.lethal }))}</span></div>`;
+    }
+
+    /** Washizu mahjong: the money the other side still has to lose */
+    fundsHtml(seat) {
+      const m = this.money;
+      if (!m || m.seat !== seat) return '';
+      return `<div class="funds">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
     }
 
     /** the rage gauge of a seat that owns a skill */
@@ -750,7 +805,8 @@
       const active = this.board.active[seat];
       const cls = active ? 'active' : (this.board.ready(seat) ? 'ready' : '');
       let label = T('skill.' + skill);
-      if (active === 'flow' && this.board.flowLeft[seat] > 0) label += ' ×' + this.board.flowLeft[seat];
+      if ((active === 'flow' || active === 'fortune') && this.board.flowLeft[seat] > 0) label += ' ×' + this.board.flowLeft[seat];
+      if (active === 'allin') label += ' ×' + this.board.stakes(seat);
       if (skill === 'sleight') label += ' ×' + this.board.usesLeft(seat);
       const watch = this.board.watchOf(seat);
       const desc = watch != null ? T('skill.insight.watch', { target: this.name(watch) }) : T('skill.' + skill + '.desc');
@@ -793,6 +849,7 @@
             </div>
           </div>
           ${this.gaugeHtml(0)}
+          ${this.bloodHtml(0)}
           ${this.riichiStick(p)}
         </div>`;
       const watched = [1, 2, 3].filter(s => this.board.active[s] === 'insight');
@@ -916,8 +973,15 @@
         const k = this.board.skillOf(s);
         return k ? `<span title="${esc(skillDesc(s))}"><span class="gauge-icon skill-${k}"></span>${esc(T('skill.' + k))}</span>` : '';
       };
-      const foeSkills = [1, 2, 3].filter(s => this.board.skillOf(s)).map(s => `<li><span class="gauge-icon skill-${this.board.skillOf(s)}"></span>` +
-        T('intro.foeSkill', { skill: esc(T('skill.' + this.board.skillOf(s))), name: esc(this.name(s)), desc: esc(skillDesc(s)) }) + '</li>').join('');
+      // one entry per skill: two opponents with the same skill share it (安冈、铃木)
+      const groups = [];
+      for (const s of [1, 2, 3].filter(x => this.board.skillOf(x))) {
+        const g = groups.find(x => x.skill === this.board.skillOf(s) && x.desc === skillDesc(s));
+        if (g) g.seats.push(s); else groups.push({ skill: this.board.skillOf(s), desc: skillDesc(s), seats: [s] });
+      }
+      const sep = I18n.lang === 'en' ? ', ' : '、';
+      const foeSkills = groups.map(g => `<li><span class="gauge-icon skill-${g.skill}"></span>` +
+        T('intro.foeSkill', { skill: esc(T('skill.' + g.skill)), name: esc(g.seats.map(x => this.name(x)).join(sep)), desc: esc(g.desc) }) + '</li>').join('');
       const rows = st.names.map((n, s) => {
         const style = st.ai[s] && st.ai[s].style;
         const role = s === 0 ? `<span class="you-mark">${esc(T('you'))}</span>`
@@ -930,7 +994,7 @@
       const roundName = T(st.startWind === 0 ? 'round.east' : 'round.south');
       return this.overlay(`
         <div class="card intro-card">
-          <div class="card-kicker">${esc(T('stage.no', { n: st.no }))}</div>
+          <div class="card-kicker">${esc(I18n.numberOf(st, 'stage'))}</div>
           <h2>${esc(P(st.title))}</h2>
           <div class="card-sub">${esc(T('vs', { name: P(st.opponent) }))}</div>
           <p>${esc(P(st.blurb))}</p>
@@ -1039,7 +1103,7 @@
       }
       return this.overlay(`
         <div class="card final-card ${cleared ? 'cleared' : 'failed'}">
-          <div class="card-kicker">${esc(T('stage.no', { n: this.stage.no }))} · ${esc(P(this.stage.title))}</div>
+          <div class="card-kicker">${esc(I18n.numberOf(this.stage, 'stage'))} · ${esc(P(this.stage.title))}</div>
           <div class="verdict" data-result="${cleared ? 'clear' : 'defeat'}">${esc(T(cleared ? 'fin.clear' : 'fin.defeat'))}</div>
           <p class="small">${esc(P(this.stage.goal.text))}</p>
           <table class="score-table final">${rows}</table>

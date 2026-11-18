@@ -83,6 +83,10 @@
       for (const m of p.melds) for (const id of m.tiles) seen[typeOf(id)]++;
     }
     for (const id of round.doraIndicators) seen[typeOf(id)]++;
+    // Washizu mahjong: the glass tiles in the other hands are on show too
+    if (round.glass) {
+      for (const p of round.players) if (p.seat !== seat) for (const id of p.hand) if (round.isGlass(id)) seen[typeOf(id)]++;
+    }
     return seen.map(n => 4 - n);
   }
 
@@ -163,6 +167,17 @@
     for (const t of hand) seen[t]++;
     const dora = Tiles.parse(table.dora || '');
     for (const t of dora) seen[t]++;
+    // melds are on the table for all to see; with glass tiles, so is most of every other hand
+    table.seats.forEach((s, i) => {
+      for (const m of s.melds || []) for (const t of Tiles.parse(m)) seen[t]++;
+      if (i === me) return;
+      if (!table.glass) return;
+      const dark = Tiles.parse(s.opaque || '');
+      for (const t of Tiles.parse(s.hand || '')) {
+        const k = dark.indexOf(t);
+        if (k >= 0) dark.splice(k, 1); else seen[t]++;
+      }
+    });
     for (let t = 0; t < 34; t++) if (seen[t] > 4) throw new Error('table shows ' + seen[t] + ' copies of ' + Tiles.code(t));
 
     const threats = [];

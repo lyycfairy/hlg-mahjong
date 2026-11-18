@@ -124,13 +124,17 @@
     return `<span class="tile ${cls || ''}" data-type="${t}" title="${label}" ${attrs || ''}>${face(t)}</span>`;
   }
 
+  /** set while a Washizu-mahjong table is on screen: three copies of every tile are glass */
+  const state = { glass: false };
+  const isGlass = id => state.glass && id % 4 !== 0;
+
   function html(id, cls) {
-    return type(id >> 2, cls, `data-id="${id}"`);
+    return type(id >> 2, (cls || '') + (isGlass(id) ? ' glass' : ''), `data-id="${id}"`);
   }
 
   function back(cls) {
     return `<span class="tile back ${cls || ''}"></span>`;
   }
 
-  root.TileView = { face, type, html, back };
+  root.TileView = { face, type, html, back, isGlass, setGlass: on => { state.glass = !!on; } };
 })(window);

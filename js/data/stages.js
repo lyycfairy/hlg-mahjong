@@ -34,12 +34,15 @@
  *   hands        play only this many hands (the match ends after them)
  *   startKyoku   hand of the start wind to begin on (0 = the first; South 2 is startWind 1, startKyoku 1)
  *   langs        the languages a stage has been written in, when not all three (others show it in Chinese)
+ *   label        shown instead of 'Stage n' (a prologue stage: 序章); free: true keeps it open and out of the
+ *                unlock order
  *
  * The opening `kind` may also be 'scene': no decision - the prelude plays when the hand appears,
  * the intro when the player's first turn comes, and then the hand is played normally - or 'choice':
  * a plain decision from the story (options [{ id, label, desc, note, effects }]) shown before anyone
  * moves. An effect { fire: { seat } } sets that seat's skill off at once.
- *   pause        { seat, discards }: the hand stops once that seat has made that many discards (a scene
+ *   pause        { seat, discards, react }: the hand stops once that seat has made that many discards (with
+ *                react: true, only after the others have had their chance to win on the last one) (a scene
  *                takes over); the result is { type: 'pause', waits, yakuman } for goal.check
  *
  * Text is written as L(english, japanese, chinese), or Z(chinese) while a stage exists only in
@@ -57,9 +60,141 @@
     thug: L('Thug', 'チンピラ', '打手'),
     lackey: L('Lackey', '子分', '跟班'),
     yagi: L('Yagi', '矢木', '矢木'),
+    yasuoka: L('Yasuoka', '安岡', '安冈'),
+    washizu: L('Washizu', '鷲巣', '鹫巢'),
+    suzuki: L('Suzuki', '鈴木', '铃木'),
+  };
+
+  /*
+   * The prologue (js/data/prologue.js): Washizu's mansion, 1965. Transparent tiles, two against two -
+   * Akagi and his partner Yasuoka against Washizu and his man Suzuki - and between Akagi and Washizu
+   * alone, 1,000 points are 100cc of Akagi's blood or a million of Washizu's yen.
+   *   glass   every tile but one copy of each kind is glass: the other hands show through
+   *   blood   { seat, from, cc, lethal, drawn }: what `seat` bleeds when `from` wins off him or by self-draw
+   *   money   { seat, to, perPoint, funds }: what `seat` pays when `to` wins off him or by self-draw
+   */
+  const PROLOGUE = {
+    no: 0, label: Z('序章'), free: true, langs: ['zh'], glass: true,
+    names: [N.akagi, N.yasuoka, N.washizu, N.suzuki],
+    who: ['akagi19', 'yasuoka', 'washizu', 'suzuki'],
+    portraits: ['akagi19', 'yasuoka', 'washizu', 'suzuki'],
+    // Yasuoka plays for Akagi and Suzuki for Washizu; the monster himself swings for the kill
+    ai: [
+      null,
+      { style: 'collaborator', level: 0.75, ally: 0, signal: 0.8, feed: 0.8 },
+      { style: 'aggressor', level: 0.8 },
+      { style: 'collaborator', level: 0.7, ally: 2, signal: 0.8, feed: 0.6 },
+    ],
   };
 
   const STAGES = [
+    Object.assign({}, PROLOGUE, {
+      id: 'ambush',
+      title: Z('请君入瓮'),
+      opponent: Z('鹫巢巌和他的部下铃木'),
+      blurb: Z('第一个半庄，南一局。鹫巢只差一张就要立直，铃木手里早已备好了喂给他的牌。赤木手里，是一副五面听的好牌——'),
+      blood: { seat: 0, from: 2, cc: 100, lethal: 2000, drawn: 400 },
+      money: { seat: 2, to: 0, perPoint: 1000, funds: 500000000 },
+      // Akagi may stake double on this hand; Suzuki throws Washizu his winning tile the moment he declares
+      skills: [
+        { skill: 'allin', gauge: 100 },
+        null,
+        { skill: 'fortune', gauge: 20 },
+        { skill: 'collusion', gauge: 100, watch: 2 },
+      ],
+      hands: 1,
+      opening: {
+        kind: 'discard',
+        scenario: {
+          // Akagi draws 5m into a five-sided wait on circles. Yasuoka throws what he draws; Washizu draws
+          // the 3m he needs, throws 5m and declares riichi on 2s-5s (2s makes the 234 three-colour
+          // straight) - and Suzuki is holding the 2s. Only a 5m single wait catches the riichi tile.
+          // Every hand is fixed: Yasuoka's can call nothing Akagi might throw, so the draws stay in order.
+          turn: 0, n: 5, dora: '5s',
+          hands: { 0: '234m678s2345666p', 1: '118m779p46s23466z', 2: '245m234p34s678s88s', 3: '199m39p112s9s1577z' },
+          opaque: { 0: '6p', 2: '8s', 3: '9m' },
+          rivers: { 0: '9m1z8m2z9s', 1: '1z5z9m8p2p7s', 2: '1z9p4z7m1m3z', 3: '2z4z6z8p1p7s' },
+          draws: ['5m', '9s', '3m'],
+        },
+        forced: [{ seat: 1, discard: 'drawn' }, { seat: 2, discard: '5m', riichi: true }],
+        title: Z('五面听，还是单吊？'),
+        prelude: [
+          { text: Z('南一局。赤木摸进来的，是一张五万。') },
+          { who: 'washizu', emo: 'smug', face: 'sneer', think: true, text: Z('再来一张……只要再来一张三万，就是立直。铃木手里有二索——一发、平和、三色，跳满到手。') },
+        ],
+        intro: [
+          { who: 'ogi', emo: 'hope', face: 'calm', think: true, text: Z('打掉五万，就是一、二、四、五、七筒的五面听……这还用想吗？') },
+          { who: 'akagi19', emo: 'cold', face: 'calm', think: true, text: Z('鹫巢的手，透过玻璃看得一清二楚：二四五万，三四索——只差一张三万。') },
+          { who: 'akagi19', emo: 'cold', face: 'glare', think: true, text: Z('他摸到三万，立直时打出来的，一定是五万。') },
+        ],
+        notes: {
+          '5m': [
+            { who: 'ogi', emo: 'hope', face: 'calm', text: Z('五面听！五种牌，十几张，随便哪张都能和。这就对了。') },
+            { who: 'akagi19', emo: 'cold', face: 'calm', think: true, text: Z('五面听……可这十几张牌，鹫巢一张都不会给我。而铃木只要一张二索，就能把他送到我够不着的地方。') },
+          ],
+          '2p': [
+            { who: 'ogi', emo: 'shock', face: 'shock', text: Z('拆掉五面听，去单吊五万？！你疯了吗！') },
+            { who: 'akagi19', emo: 'smirk', face: 'smirk', think: true, text: Z('鹫巢立直打出来的那张牌——就是我要的牌。请君入瓮。') },
+          ],
+          '5p': [
+            { who: 'ogi', emo: 'shock', face: 'shock', text: Z('拆掉五面听，去单吊五万？！你疯了吗！') },
+            { who: 'akagi19', emo: 'smirk', face: 'smirk', think: true, text: Z('鹫巢立直打出来的那张牌——就是我要的牌。请君入瓮。') },
+          ],
+          '*': [
+            { who: 'ogi', emo: 'worried', face: 'tense', text: Z('那张一打，手就散了……鹫巢可马上就要立直了！') },
+          ],
+        },
+        options: [
+          {
+            id: 'wide', tiles: '5m',
+            after: [{ fx: 'clack', text: Z('五万离开了赤木的手指，横在牌河里，透亮。') }],
+          },
+          {
+            id: 'ambush', tiles: '2p',
+            after: [{ fx: 'clack', text: Z('赤木拆掉了五面听。留在手里的，只有一张孤零零的五万。') }],
+          },
+          {
+            id: 'ambush', tiles: '5p',
+            after: [{ fx: 'clack', text: Z('赤木拆掉了五面听。留在手里的，只有一张孤零零的五万。') }],
+          },
+          { id: 'other', tiles: '*' },
+        ],
+      },
+      scores: [26000, 18500, 40000, 15500],
+      firstDealer: 1,
+      startWind: 1,
+      startKyoku: 0,
+      endWind: 1,
+      goal: {
+        text: Z('鹫巢立直的那一刻，直接和他打出的牌。'),
+        check: final => (final.results || []).some(r => r.type === 'win' && r.winner === 0 && r.loser === 2),
+      },
+      available: true,
+    }),
+    Object.assign({}, PROLOGUE, {
+      id: 'resolve',
+      title: Z('人血麻将'),
+      opponent: Z('鹫巢巌——“再抽六百cc，你就死了。”'),
+      blurb: Z('第五个半庄。赤木身上已经抽走了一千四百cc，再被抽六百cc就是死。鹫巢押上了他最后的逃命钱。'),
+      blood: { seat: 0, from: 2, cc: 100, lethal: 2000, drawn: 1400 },
+      money: { seat: 2, to: 0, perPoint: 1000, funds: 286500000 },
+      // both partners now feed on riichi; Washizu's luck is coming back to him
+      skills: [
+        { skill: 'allin', gauge: 50 },
+        { skill: 'collusion', gauge: 100, watch: 0 },
+        { skill: 'fortune', gauge: 30 },
+        { skill: 'collusion', gauge: 100, watch: 2 },
+      ],
+      scores: [25000, 25000, 25000, 25000],
+      firstDealer: 2,
+      startWind: 0,
+      endWind: 0,
+      goal: {
+        text: Z('活着打完东场，并且点数在鹫巢之上。'),
+        check: final => !(final.blood && final.blood.dead) && final.scores[0] > final.scores[2],
+      },
+      available: true,
+    }),
     {
       id: 'storm',
       no: 1,
@@ -454,6 +589,7 @@
     isUnlocked(id, save) {
       for (const s of STAGES) {
         if (s.id === id) return !!s.available;
+        if (s.free) continue;                 // a prologue stage is always open and never in the way
         if (!save.cleared[s.id]) return false;
       }
       return false;

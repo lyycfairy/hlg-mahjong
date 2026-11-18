@@ -6,7 +6,7 @@ An unofficial, non-commercial fan game based on *Akagi: The Genius Who Descended
 
 **▶ Play in your browser: <https://lyycfairy.github.io/hlg-mahjong/>**
 
-![A doorway in the storm - the opening of Chapter 1](assets/bg/doorway.jpg)
+![Washizu's gaming room: glass tiles, and the blood-drawing stand - the prologue](assets/bg/washizu.jpg)
 
 [中文说明](#中文) · [日本語](#日本語)
 
@@ -22,6 +22,15 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
 
 ## What is in it
 
+- **Prologue — 人血麻将** ("human-blood mahjong"; **Chinese only for now**). Start here if you have
+  never met the series. 1965, a rainstorm, the mansion of Washizu Iwao, "the monster of Showa": six hanchan of
+  *transparent* mahjong — three copies of every tile are glass, so the other hands show through — and between
+  Akagi and Washizu alone, 1,000 points are 100cc of Akagi's blood or a million of Washizu's yen. 2,000cc is
+  death. It follows the anime's Washizu arc (episodes 16–26): Akagi demanding the stakes be raised tenfold, the
+  riichi-and-feed, the "second river", the 5m ambush, the transfusions he refuses, the 1p trap and the basin of
+  blood. Every decision that matters is yours, and each road the story did not take ends in an ending of its
+  own (five of them, each with a way back). Two matches are played at the glass table, with a blood meter and
+  Washizu's dwindling fortune on screen: the 5m ambush (请君入瓮) and the fifth hanchan at 1,400cc (人血麻将).
 - **Story Mode** — Chapter 1, *The Stormy Night*: a man gambling his life in a back-room game, and the
   boy who walks in from the rain. Chapter 2, **瞒天过海** ("deceive the heavens to cross the sea"): Akagi's
   first hanchan, the police at the door, and a hand built out of the discards while every eye is on the
@@ -29,8 +38,8 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   with a detective at the table to witness it. The chapter titles from here on are taken from the Thirty-Six
   Stratagems. Chapters 2 and 3 follow the first episode of the anime and are **in Chinese only for now**; the
   other languages follow once they are final.
-- **Battle Mode** — four stages: *The Stormy Night*, 瞒天过海 and 借刀杀人 (Chinese for now), and *The
-  Substitute* (李代桃僵 in Chinese). Clearing a stage unlocks the next.
+- **Battle Mode** — the two prologue matches (always open), then four stages: *The Stormy Night*, 瞒天过海 and
+  借刀杀人 (Chinese for now), and *The Substitute* (李代桃僵 in Chinese). Clearing a stage unlocks the next.
 - **Skills** — in Chinese every skill is named with a four-character idiom, and the briefing before a match
   explains each skill at the table:
   - **洞若观火** (*Insight*, "to see as clearly as watching a fire") — see through every hand at the table;
@@ -43,6 +52,11 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
     and every opponent stops thinking until Akagi's next turn.
   - **明察秋毫** (*Second Look*, "see even the tip of an autumn hair") — the thug's, in Chapter 3: one more look
     at the ponds and the swap is seen.
+  - **孤注一掷** (*All In*, "stake everything on one throw") — Akagi's, in the prologue: the blood and the money
+    riding on the hand are doubled, both ways.
+  - **洪福齐天** (*Heaven's Favour*, "good fortune as high as the sky") — Washizu's luck: two perfect draws.
+  - **里应外合** (*Inside Job*, "those inside answer those outside") — the partners': the moment their man
+    declares riichi, they throw him his winning tile.
 - **Decision scenes** — when the story reaches a discard that matters, the table is laid out with the real
   hand, and every tile shows where it leads: ready or not, the waits and how many are left, what the hand
   pays, and how dangerous the tile is. A commentary goes with it in text and, if your browser has a voice
@@ -57,8 +71,8 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   throw a single tile Akagi is waiting on.
 - **Three kinds of opponent** — the *aggressor* attacks, the *collaborator* plays for a team-mate, the
   *independent* plays his own game by the numbers. The briefing before each stage says who is which.
-- **Voices** — every character line is voiced in Japanese, Chinese and English, each character with a voice
-  of his own chosen for his age and manner, and the players call riichi, pon, chi, ron and tsumo aloud.
+- **Voices** — every character line is voiced in Japanese, Chinese and English (the prologue's cast — Washizu,
+  Ogi and Suzuki — in Chinese for now), each character with a voice of his own chosen for his age and manner, and the players call riichi, pon, chi, ron and tsumo aloud.
   The **Voice** button in the story toolbar and at the table turns voices off; ▶ in the backlog replays a line.
 
 ## Mahjong rules
@@ -109,8 +123,14 @@ Only the files needed to play:
 **▶ 在线游玩：<https://lyycfairy.github.io/hlg-mahjong/>**
 
 - **离线游玩**——下载本仓库（*Code → Download ZIP*），解压后用浏览器打开 `index.html` 即可，无需安装，也不需要联网。
+- **序章《人血麻将》**（目前只有中文）——没接触过原作的玩家请从这里开始。昭和四十年的暴雨夜，“昭和的怪物”鹫巢巌的洋馆：
+  麻将牌四张里有三张是透明的玻璃牌，对手的手牌大半一览无余；赤木和鹫巢之间，一千点就是赤木的一百cc血，或鹫巢的一百万日元，抽满两千cc即死。
+  根据动画第16–26集的“鹫巢麻将”篇改编：赤木要求把赌注提高十倍、立直后搭档马上喂牌、“第二条牌河”、五万单吊的伏击、两次拒绝补血、一筒的陷阱、
+  倒进脸盆的血。关键抉择都交给玩家，偏离原作的路线各有一个原创结局（共五个，都能回到那一刻重选）；
+  两场在玻璃牌桌上进行的对局（画面上有抽血量和鹫巢剩下的资金）：南一局的五万伏击《请君入瓮》，以及已抽血一千四百cc时的第五个半庄《人血麻将》。
+  新技能：孤注一掷（这一局押上的血与钱翻倍）、洪福齐天（鹫巢的强运）、里应外合（搭档一立直就喂牌）。
 - **内容**——故事模式第一章《暴风雨之夜》、第二章《瞒天过海》（警察找上门、所有人望向门口的那一刻，赤木从牌河里掉包，做成大三元＋四暗刻单骑的听牌）、
-  第三章《借刀杀人》（不在场证明、浑水摸鱼重开牌局、龙崎打出的西风——三倍役满）；第二、三章根据动画第一集改编，目前只有中文。对战模式四关（过一关开启下一关）；
+  第三章《借刀杀人》（不在场证明、浑水摸鱼重开牌局、龙崎打出的西风——三倍役满）；第二、三章根据动画第一集改编，目前只有中文。对战模式除序章的两场外共四关（过一关开启下一关）；
   技能均以四字成语命名，对局前的介绍会逐一解释：洞若观火、时来运转、移花接木、浑水摸鱼、明察秋毫；抉择场景会摆出真实手牌，并分析每一张牌的
   走向（是否听牌、听哪些牌、打点、危险度），配有文字和语音解说；每场对局都从故事中的一个场景开始（第一关里赤木照原作那样，
   拿下第一张便宜的和牌；第二关由你抉择）；技能与怒气槽——第一关赤木没有技能，而龙崎在第一局后学会“洞察”：
@@ -118,7 +138,7 @@ Only the files needed to play:
 - **不会打麻将？** 标题画面里有五分钟入门的“游戏说明”。
 - **尚未实现**——杠、赤宝牌、途中流局、流局满贯、一炮多响。
 
-故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，配音为语音合成：赤木、南乡、龙崎（以及中日文版的矢木、安冈和牌桌上的打手、跟班）由 IndexTTS 2.5 根据为本作文字设计的声音生成（未复制任何真人声音），其余使用微软 Edge 神经网络语音，均非动画声优，未使用任何官方素材。
+故事文本为本项目原创的改写，美术由 AI 根据原创文字描述生成，配音为语音合成：赤木、南乡、龙崎（以及中日文版的矢木、安冈和牌桌上的打手、跟班，中文版序章的鹫巢、仰木、铃木）由 IndexTTS 2.5 根据为本作文字设计的声音生成（未复制任何真人声音），其余使用微软 Edge 神经网络语音，均非动画声优，未使用任何官方素材。
 《アカギ》© 福本伸行／竹书房。本作为同人作品，与版权方无任何关联。
 
 ## 日本語
@@ -131,8 +151,13 @@ Only the files needed to play:
 
 - **オフラインで遊ぶ**——このリポジトリをダウンロード（*Code → Download ZIP*）して展開し、`index.html` をブラウザで
   開いてください。インストールもネット接続も不要です。
+- **序章「人血麻将」**（現在は中国語版のみ）——原作を知らない方はここから。昭和四十年、嵐の夜、「昭和の怪物」鷲巣巌の屋敷。
+  各牌四枚のうち三枚がガラスの「透明な牌」で、相手の手牌がほとんど透けて見えます。アカギと鷲巣のあいだでは千点がアカギの血100cc、
+  または鷲巣の百万円。2000ccで死。アニメ第16〜26話の鷲巣麻雀編にもとづき、レートを十倍に吊り上げるアカギ、リーチと差し込み、
+  「第二の河」、五萬単騎の待ち伏せ、拒み続ける輸血、一筒の罠、洗面器の血を描きます。重要な決断はすべてプレイヤーに委ねられ、
+  原作と違う道にはそれぞれ独自の結末があります（五つ。どれもその場面に戻れます）。ガラスの卓での対局が二つ（採血量と鷲巣の資金を表示）。
 - **内容**——ストーリーモード第一章「嵐の夜」、第二章「瞞天過海」、第三章「借刀殺人」（第二・三章はアニメ第一話にもとづき、現在は中国語版のみ。
-  刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。対局モードは四ステージ（クリアすると次が開きます）。決断の場面では
+  刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。対局モードは序章の二局のほかに四ステージ（クリアすると次が開きます）。決断の場面では
   実際の手牌が卓に並び、どの牌を切るとどうなるか（テンパイかどうか、待ち、打点、危険度）が文字と音声の解説つきで
   示されます。各対局は物語の一場面から始まります（第一ステージではアカギが原作どおり
   最初の安い当たり牌でアガり、第二ステージは自分で決断します）。スキルと怒気ゲージ——第一ステージのアカギはスキルを持たず、
@@ -143,5 +168,5 @@ Only the files needed to play:
 - **未実装**——カン、赤ドラ、途中流局、流し満貫、ダブロン。
 
 ストーリーの文章は本作のために書き下ろした再話で、絵は独自の文章による説明から AI が生成したものです。ボイスは音声合成です。
-アカギ・南郷・竜崎（日本語版と中国語版では矢木・安岡・卓のチンピラと子分も）は本作のために文章から設計した声をもとに IndexTTS 2.5 で生成し
+アカギ・南郷・竜崎（日本語版と中国語版では矢木・安岡・卓のチンピラと子分も、中国語版の序章では鷲巣・仰木・鈴木も）は本作のために文章から設計した声をもとに IndexTTS 2.5 で生成し
 （実在の人物の声は使っていません）、ほかは Microsoft Edge のニューラル音声を使っています。いずれもアニメの声優ではありません。公式の素材は一切使用していません。『アカギ』© 福本伸行／竹書房。本作はファン作品であり、権利者とは一切関係ありません。

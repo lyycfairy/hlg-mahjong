@@ -55,7 +55,11 @@
       if (!on) Voice.stop();
     },
 
-    key(who, text, l) { return (l || lang()) + '/' + who + '/' + hash(String(text)); },
+    /** where a line's clip lives; a character may speak with another's recordings (Characters[who].voice) */
+    key(who, text, l) {
+      const c = root.Characters && root.Characters[who];
+      return (l || lang()) + '/' + ((c && c.voice) || who) + '/' + hash(String(text));
+    },
     has(who, text) { return !!who && !!Voice.files[Voice.key(who, text)]; },
     duration(who, text) { return Voice.files[Voice.key(who, text)] || 0; },
     url(key) { return 'assets/voice/' + key + '.mp3'; },

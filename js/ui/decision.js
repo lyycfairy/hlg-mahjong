@@ -148,30 +148,61 @@
     /**
      * A story table: { me, dealer, roundWind, kyoku, dora, wall, seats: [{ who, name, hand, draw, river, riichi, score }] }.
      * `opts.win` (a tile code) lays the hand open with that tile as the winning one.
+     * Washizu mahjong: with `glass: true` every tile is glass, and each seat may add `opaque` (the codes of
+     * its opaque tiles) and `melds` (['2222s', ...]). The other seats' hands then show through the glass:
+     * glass tiles face up, opaque ones as backs; in the player's own hand the opaque tiles stay ivory.
      */
     html(table, opts) {
       opts = opts || {};
       const me = table.me || 0;
       const wind = s => (s - table.dealer + 4) % 4;
       const nameOf = s => TableBoard.nameOf(table, s);
+      const glass = table.glass ? ' glass' : '';
+      // a seat's hand split into what shows through the glass and the opaque tiles
+      const split = seat => {
+        const dark = Tiles.parse(seat.opaque || '');
+        const shown = [], hidden = [];
+        for (const t of Tiles.parse(seat.hand || '')) {
+          const k = dark.indexOf(t);
+          if (k >= 0) { dark.splice(k, 1); hidden.push(t); } else shown.push(t);
+        }
+        return { shown, hidden };
+      };
+      const meldsHtml = seat => (seat.melds || []).map(m => `<span class="tb-meld">${Tiles.parse(m).map(t => TileView.type(t, 'rv' + glass)).join('')}</span>`).join('');
       const river = (seat, i) => {
         const tiles = Tiles.parse(seat.river || '');
-        const cells = tiles.map((t, k) => TileView.type(t, 'rv' + (seat.riichi === k ? ' sideways' : ''))).join('');
+        const cells = tiles.map((t, k) => TileView.type(t, 'rv' + glass + (seat.riichi === k ? ' sideways' : ''))).join('');
+        let through = '';
+        if (table.glass && i !== me && (seat.hand || seat.melds)) {
+          const h = split(seat);
+          through = `<div class="tb-through">${h.shown.map(t => TileView.type(t, 'rv glass')).join('')}${h.hidden.map(() => TileView.back('rv')).join('')}${meldsHtml(seat)}</div>`;
+        }
         const declared = seat.riichi != null;
         return `<div class="tb-river ${i === me ? 'me' : ''} ${declared ? 'riichi' : ''}">` +
           `<div class="tb-who"><span class="wind-badge ${wind(i) === 0 ? 'dealer' : ''}" lang="ja">${WIND_KANJI[wind(i)]}</span>` +
           `<span class="tb-name">${esc(nameOf(i))}</span>` +
           (seat.score != null ? `<span class="tb-score">${fmt(seat.score)}</span>` : '') +
           (declared ? `<span class="tb-riichi">${esc(T('act.riichi'))}</span>` : '') + '</div>' +
-          `<div class="tb-tiles">${cells}</div></div>`;
+          `<div class="tb-tiles">${cells}</div>${through}</div>`;
       };
       // opponents in the order they play after me, then my own pond
       const order = [1, 2, 3].map(k => (me + k) % 4).concat([me]);
       const mine = table.seats[me];
-      const hand = Tiles.parse(mine.hand || '').map(t => TileView.type(t, 'th')).join('');
+      let hand;
+      if (table.glass) {
+        // in order, the opaque tiles marked where they stand
+        const dark = Tiles.parse(mine.opaque || '');
+        hand = Tiles.parse(mine.hand || '').map(t => {
+          const k = dark.indexOf(t);
+          if (k >= 0) { dark.splice(k, 1); return TileView.type(t, 'th opaque'); }
+          return TileView.type(t, 'th glass');
+        }).join('') + meldsHtml(mine);
+      } else {
+        hand = Tiles.parse(mine.hand || '').map(t => TileView.type(t, 'th')).join('');
+      }
       const extra = opts.win ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(opts.win)[0], 'th win')}`
         : (mine.draw ? `<span class="tb-gap"></span>${TileView.type(Tiles.parse(mine.draw)[0], 'th drawn')}` : '');
-      const dora = Tiles.parse(table.dora || '').map(t => TileView.type(t, 'rv')).join('');
+      const dora = Tiles.parse(table.dora || '').map(t => TileView.type(t, 'rv' + glass)).join('');
       return `
         <div class="tb">
           <div class="tb-top">

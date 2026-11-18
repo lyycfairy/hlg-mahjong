@@ -73,6 +73,11 @@
     doorway: { css: 'parlor', img: 'bg/doorway.jpg', rain: true },
     table:   { css: 'parlor', img: 'bg/table.jpg' },
     pier:    { css: 'storm', img: 'bg/pier.jpg', rain: true },
+    // the prologue: Washizu's mansion, 1965
+    mansion: { css: 'storm', img: 'bg/mansion.jpg', rain: true },
+    washizu: { css: 'parlor', img: 'bg/washizu.jpg' },
+    blood:   { css: 'parlor', img: 'bg/blood.jpg' },
+    basin:   { css: 'parlor', img: 'bg/basin.jpg' },
   };
 
   const Backgrounds = {

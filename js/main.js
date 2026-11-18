@@ -91,7 +91,7 @@
         return `
           <article class="sel-card ${c.available ? '' : 'is-locked'}">
             ${banner}
-            <div class="sel-no">${esc(T('chapter.no', { n: c.no }))}</div>
+            <div class="sel-no">${esc(I18n.numberOf(c, 'chapter'))}</div>
             <h3>${esc(P(c.title))}</h3>
             <p>${esc(P(c.summary))}</p>
             <div class="sel-foot">${state}
@@ -151,7 +151,7 @@
         return `
           <article class="sel-card ${s.available && unlocked ? '' : 'is-locked'}">
             ${foe}
-            <div class="sel-no">${esc(T('stage.no', { n: s.no }))}</div>
+            <div class="sel-no">${esc(I18n.numberOf(s, 'stage'))}</div>
             <h3>${esc(P(s.title))}</h3>
             <div class="sel-vs">${esc(T('vs', { name: P(s.opponent) }))}</div>
             <p>${esc(s.blurb ? P(s.blurb) : T('stage.unavailable'))}</p>

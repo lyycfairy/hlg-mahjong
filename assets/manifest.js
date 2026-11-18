@@ -9,6 +9,18 @@ window.AssetManifest = {
   "thug": "medium",
   "yasuoka": "medium",
   "yagi": "medium",
+  "akagi19": "medium",
+  "washizu": "high",
+  "ogi": "medium",
+  "suzuki": "medium",
+  "bg_mansion": "medium",
+  "bg_washizu": "medium",
+  "bg_blood": "medium",
+  "bg_basin": "low",
+  "fx_allin": "low",
+  "fx_fortune": "medium",
+  "fx_collusion": "medium",
+  "icon_prologue": "medium",
   "bg_city": "medium",
   "bg_parlor": "low",
   "bg_doorway": "medium",
@@ -30,7 +42,15 @@ window.AssetManifest = {
   "fx_bits": "medium"
  },
  "files": {
+  "bg/basin.jpg": [
+   1600,
+   900
+  ],
   "bg/battle.jpg": [
+   1600,
+   900
+  ],
+  "bg/blood.jpg": [
    1600,
    900
   ],
@@ -39,6 +59,10 @@ window.AssetManifest = {
    900
   ],
   "bg/doorway.jpg": [
+   1600,
+   900
+  ],
+  "bg/mansion.jpg": [
    1600,
    900
   ],
@@ -53,6 +77,34 @@ window.AssetManifest = {
   "bg/table.jpg": [
    1600,
    900
+  ],
+  "bg/washizu.jpg": [
+   1600,
+   900
+  ],
+  "portraits/akagi19_calm.webp": [
+   720,
+   960
+  ],
+  "portraits/akagi19_calm_face.webp": [
+   256,
+   256
+  ],
+  "portraits/akagi19_glare.webp": [
+   720,
+   960
+  ],
+  "portraits/akagi19_glare_face.webp": [
+   256,
+   256
+  ],
+  "portraits/akagi19_smirk.webp": [
+   720,
+   960
+  ],
+  "portraits/akagi19_smirk_face.webp": [
+   256,
+   256
   ],
   "portraits/akagi_calm.webp": [
    720,
@@ -102,6 +154,30 @@ window.AssetManifest = {
    256,
    256
   ],
+  "portraits/ogi_calm.webp": [
+   720,
+   960
+  ],
+  "portraits/ogi_calm_face.webp": [
+   256,
+   256
+  ],
+  "portraits/ogi_shock.webp": [
+   720,
+   960
+  ],
+  "portraits/ogi_shock_face.webp": [
+   256,
+   256
+  ],
+  "portraits/ogi_tense.webp": [
+   720,
+   960
+  ],
+  "portraits/ogi_tense_face.webp": [
+   256,
+   256
+  ],
   "portraits/ryuzaki_irritated.webp": [
    720,
    960
@@ -126,6 +202,30 @@ window.AssetManifest = {
    256,
    256
   ],
+  "portraits/suzuki_blank.webp": [
+   720,
+   960
+  ],
+  "portraits/suzuki_blank_face.webp": [
+   256,
+   256
+  ],
+  "portraits/suzuki_nod.webp": [
+   720,
+   960
+  ],
+  "portraits/suzuki_nod_face.webp": [
+   256,
+   256
+  ],
+  "portraits/suzuki_tense.webp": [
+   720,
+   960
+  ],
+  "portraits/suzuki_tense_face.webp": [
+   256,
+   256
+  ],
   "portraits/thug_angry.webp": [
    720,
    960
@@ -147,6 +247,30 @@ window.AssetManifest = {
    960
   ],
   "portraits/thug_stunned_face.webp": [
+   256,
+   256
+  ],
+  "portraits/washizu_manic.webp": [
+   720,
+   960
+  ],
+  "portraits/washizu_manic_face.webp": [
+   256,
+   256
+  ],
+  "portraits/washizu_rage.webp": [
+   720,
+   960
+  ],
+  "portraits/washizu_rage_face.webp": [
+   256,
+   256
+  ],
+  "portraits/washizu_sneer.webp": [
+   720,
+   960
+  ],
+  "portraits/washizu_sneer_face.webp": [
    256,
    256
   ],
@@ -238,6 +362,14 @@ window.AssetManifest = {
    559,
    136
   ],
+  "ui/icon_allin.webp": [
+   608,
+   611
+  ],
+  "ui/icon_collusion.webp": [
+   608,
+   611
+  ],
   "ui/icon_confusion.webp": [
    744,
    749
@@ -245,6 +377,10 @@ window.AssetManifest = {
   "ui/icon_flow.webp": [
    374,
    382
+  ],
+  "ui/icon_fortune.webp": [
+   609,
+   611
   ],
   "ui/icon_insight.webp": [
    372,
@@ -286,9 +422,17 @@ window.AssetManifest = {
    512,
    512
   ],
+  "fx/allin.jpg": [
+   1600,
+   900
+  ],
   "fx/bolt.webp": [
    397,
    436
+  ],
+  "fx/collusion.jpg": [
+   1600,
+   900
   ],
   "fx/confusion.jpg": [
    1600,
@@ -307,6 +451,10 @@ window.AssetManifest = {
    445
   ],
   "fx/flow.jpg": [
+   1600,
+   900
+  ],
+  "fx/fortune.jpg": [
    1600,
    900
   ],

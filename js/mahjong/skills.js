@@ -20,6 +20,11 @@
  *   notice   (Second Look) fires by itself once the gauge is full, unless its owner is
  *            dazed: he notices that the ponds have been tampered with, and the hand
  *            is voided (the round ends with { type: 'exposed' }). `watch` names the cheat.
+ *   allin    (All In) for the rest of the hand the blood and money at stake are doubled
+ *            (the interface reads board.stakes(seat))
+ *   fortune  (Heaven's Favour) Washizu's luck: like the Flow, but for two draws - the best tiles left
+ *   collusion (Inside Job) fires by itself: the moment the seat it serves (`watch`) declares riichi,
+ *            its owner throws him a winning tile if he holds one (turn opts.feed)
  *   sleight  (Sleight of Hand) on his own turn the player swaps a tile in his hand
  *            for any tile lying in a pond. It does not wait for a full gauge:
  *            each swap costs DEFS.sleight.cost, so a full gauge is four swaps.
@@ -55,6 +60,9 @@
     sleight: { id: 'sleight', cost: 25 },
     confusion: { id: 'confusion' },
     notice: { id: 'notice', auto: true },
+    allin: { id: 'allin', stakes: 2 },
+    fortune: { id: 'fortune', draws: 2 },
+    collusion: { id: 'collusion', auto: true },
   };
 
   class SkillBoard {
@@ -76,6 +84,9 @@
       this.swapped = [0, 0, 0, 0];              // Sleight of Hand swaps made this hand
       this.daze = null;                          // { by: seat } while a confusion holds the others
     }
+
+    /** how many times over the blood and money ride on this hand for `seat` (All In) */
+    stakes(seat) { return this.active[seat] === 'allin' ? DEFS.allin.stakes : 1; }
 
     /** is `seat` in the thought-stop of somebody else's confusion? */
     dazed(seat) { return !!this.daze && this.daze.by !== seat; }
@@ -151,6 +162,18 @@
         if (this.ready(seat)) await this.activate(round, seat);
         return;
       }
+      if (this.skillOf(seat) === 'collusion') {
+        // the partner has just declared riichi: hand him the tile he is waiting for
+        const ally = this.seats[seat].watch;
+        const p = round.players[seat];
+        const can = p.riichi ? (p.drawn != null ? [p.drawn] : []) : p.hand;     // in riichi he can only throw his draw
+        const feed = ally != null && round.players[ally].riichi ? can.find(id => round.ronResult(ally, id)) : undefined;
+        if (feed != null && this.ready(seat)) {
+          await this.activate(round, seat);
+          opts.feed = feed;
+        }
+        return;
+      }
       if (this.watchOf(seat) != null) {
         // a watching Insight is not the owner's to time: it fires when the watched player is ready
         if (this.ready(seat) && round.waitsOf(this.watchOf(seat)).length) await this.activate(round, seat);
@@ -188,7 +211,7 @@
       this.seats[seat].gauge = 0;
       this.active[seat] = skill;
       this.used[seat]++;
-      if (skill === 'flow') this.flowLeft[seat] = DEFS.flow.draws;
+      if (skill === 'flow' || skill === 'fortune') this.flowLeft[seat] = DEFS[skill].draws;
       if (skill === 'confusion') this.daze = { by: seat };
       await round.emit({ type: 'skill', seat, skill });
       // the round sees this after the turn's skills and ends the hand (Round.play)
