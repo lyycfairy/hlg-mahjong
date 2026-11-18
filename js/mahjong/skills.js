@@ -26,6 +26,13 @@
  *   collusion (Inside Job) a standing trait, not a gauge: the moment the seat it serves (`watch`)
  *            declares riichi, its owner throws him a winning tile if he holds one (turn opts.feed),
  *            announced once a hand. (The rest of a partner's play is the 'supporter' AI, ai.js.)
+ *   starve   (釜底抽薪, Pull the Firewood) the owner sees through every opponent, as with Insight; his next
+ *            three draws are tiles his opponents are waiting on, taken out of the wall before they can
+ *            reach them (never while he is in riichi - he could not keep them); and for the rest of the
+ *            hand no opponent draws his own winning tile: it sinks into the wall instead
+ *   probe    (打草惊蛇, Beat the Grass) aimed at one player (`watch`): for the rest of the hand that player
+ *            is shaken - he fires no skill, reads nobody (an Insight already burning goes dark) and his
+ *            gauge stands still (board.shook(seat)). A story effect { steady: { seat } } ends it.
  *   sleight  (Sleight of Hand) on his own turn the player swaps a tile in his hand
  *            for any tile lying in a pond. It does not wait for a full gauge:
  *            each swap costs DEFS.sleight.cost, so a full gauge is four swaps.
@@ -64,6 +71,8 @@
     allin: { id: 'allin', stakes: 2 },
     fortune: { id: 'fortune', draws: 2 },
     collusion: { id: 'collusion', auto: true, passive: true },
+    starve: { id: 'starve', draws: 3 },
+    probe: { id: 'probe' },
   };
 
   class SkillBoard {
@@ -84,6 +93,8 @@
       this.ignore = [[], [], [], []];           // seat -> targets it does not take seriously this hand
       this.swapped = [0, 0, 0, 0];              // Sleight of Hand swaps made this hand
       this.daze = null;                          // { by: seat } while a confusion holds the others
+      this.starveLeft = [0, 0, 0, 0];           // Pull the Firewood: winning tiles still to be drawn away
+      this.shaken = [false, false, false, false];   // Beat the Grass: seats that cannot read or fire this hand
     }
 
     /** how many times over the blood and money ride on this hand for `seat` (All In) */
@@ -91,6 +102,10 @@
 
     /** is `seat` in the thought-stop of somebody else's confusion? */
     dazed(seat) { return !!this.daze && this.daze.by !== seat; }
+    /** has somebody's Beat the Grass shaken `seat` for this hand? */
+    shook(seat) { return !!this.shaken[seat]; }
+    /** the story says he held firm: the shaking ends */
+    steady(seat) { this.shaken[seat] = false; }
 
     skillOf(seat) { return this.seats[seat] ? this.seats[seat].skill : null; }
     /** the player a watching Insight keeps its eye on, or null */
@@ -100,7 +115,7 @@
     cost(seat) { const d = this.seats[seat] && DEFS[this.seats[seat].skill]; return (d && d.cost) || MAX; }
     /** a standing trait needs no gauge (Inside Job) */
     passive(seat) { const d = this.seats[seat] && DEFS[this.seats[seat].skill]; return !!(d && d.passive); }
-    ready(seat) { return !!this.seats[seat] && (this.passive(seat) || this.seats[seat].gauge >= this.cost(seat)) && !this.active[seat]; }
+    ready(seat) { return !!this.seats[seat] && !this.shaken[seat] && (this.passive(seat) || this.seats[seat].gauge >= this.cost(seat)) && !this.active[seat]; }
     /** uses left in the gauge (Sleight of Hand) */
     usesLeft(seat) { return this.seats[seat] ? Math.floor(this.seats[seat].gauge / this.cost(seat)) : 0; }
 
@@ -121,9 +136,10 @@
     /** opponents whose hands `seat` currently sees through */
     reads(round, seat) {
       const out = [];
+      if (this.shaken[seat]) return out;        // shaken: he trusts nothing he sees
       for (let o = 0; o < 4; o++) {
         if (o === seat) continue;
-        if (this.active[seat] === 'insight') out.push(o);
+        if (this.active[seat] === 'insight' || this.active[seat] === 'starve') out.push(o);
         else if (this.senses[seat].indexOf(o) >= 0 && round.players[o].riichi) out.push(o);
       }
       return out;
@@ -138,7 +154,7 @@
 
     /** charge gauges from engine events (a dazed player's gauge stands still) */
     onEvent(evt) {
-      const add = (seat, n) => { if (!this.dazed(seat)) this.add(seat, n); };
+      const add = (seat, n) => { if (!this.dazed(seat) && !this.shaken[seat]) this.add(seat, n); };
       switch (evt.type) {
         case 'draw': add(evt.seat, GAIN.draw); break;
         case 'call': add(evt.seat, GAIN.call); break;
@@ -216,6 +232,8 @@
       this.used[seat]++;
       if (skill === 'flow' || skill === 'fortune') this.flowLeft[seat] = DEFS[skill].draws;
       if (skill === 'confusion') this.daze = { by: seat };
+      if (skill === 'starve') this.starveLeft[seat] = DEFS.starve.draws;
+      if (skill === 'probe') this.shaken[this.seats[seat].watch != null ? this.seats[seat].watch : 0] = true;
       await round.emit({ type: 'skill', seat, skill });
       // the round sees this after the turn's skills and ends the hand (Round.play)
       if (skill === 'notice') round.exposed = { by: seat, target: this.seats[seat].watch };
@@ -253,8 +271,34 @@
       opts.tsumoResult = win;
     }
 
+    /**
+     * Pull the Firewood, before `seat` draws. Its owner's draw: the nearest tile an opponent is waiting
+     * on comes to the top of the wall (three times a hand, and not while he is in riichi - he would
+     * have to throw it). Anybody else's draw while it burns: if the top tile would win him the hand,
+     * it changes places with the nearest one that would not.
+     */
+    starveDraw(round, seat) {
+      const wall = round.wall;
+      const top = wall.length - 1;
+      if (top < 1) return;
+      const swap = i => { const x = wall[top]; wall[top] = wall[i]; wall[i] = x; };
+      if (this.active[seat] === 'starve') {
+        if (this.starveLeft[seat] <= 0 || round.players[seat].riichi) return;
+        const want = new Set();
+        for (let o = 0; o < 4; o++) if (o !== seat) for (const t of round.waitsOf(o)) want.add(t);
+        if (!want.size) return;
+        for (let i = top; i >= 0; i--) if (want.has(typeOf(wall[i]))) { swap(i); this.starveLeft[seat]--; return; }
+        return;
+      }
+      if (!this.active.some((a, o) => a === 'starve' && o !== seat)) return;
+      const mine = round.waitsOf(seat);
+      if (mine.indexOf(typeOf(wall[top])) < 0) return;
+      for (let i = top - 1; i >= 0; i--) if (mine.indexOf(typeOf(wall[i])) < 0) { swap(i); return; }
+    }
+
     /** `flow`: bring the most useful tile left in the wall to the top */
     beforeDraw(round, seat) {
+      if (this.active.indexOf('starve') >= 0) this.starveDraw(round, seat);
       if (this.flowLeft[seat] <= 0) return;
       this.flowLeft[seat]--;
       const p = round.players[seat];
@@ -291,7 +335,7 @@
   /**
    * Apply the consequences of a story decision to a board:
    *   { grant: { seat, skill, gauge, watch } }   { gauge: { seat, set | add } }
-   *   { underrate: { seats, target } }    { sense: { seat, target } }
+   *   { underrate: { seats, target } }    { sense: { seat, target } }    { steady: { seat } }
    * Returns what happened, for the interface to announce.
    */
   function applyEffects(board, effects) {
@@ -313,6 +357,9 @@
       } else if (e.sense) {
         board.sense(e.sense.seat, e.sense.target);
         notices.push({ type: 'sense', seat: e.sense.seat, target: e.sense.target });
+      } else if (e.steady) {
+        if (board.shook(e.steady.seat)) notices.push({ type: 'steady', seat: e.steady.seat });
+        board.steady(e.steady.seat);
       }
     }
     return notices;

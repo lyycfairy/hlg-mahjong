@@ -532,6 +532,14 @@
         // Washizu calls on his luck when he is far from ready: two perfect draws make him ready, no more
         return !p.riichi && round.wall.length >= 8 && Hand.shanten(Tiles.counts(p.hand.map(typeOf)), p.melds.length) === 2;
       }
+      if (skill === 'starve') {
+        // pull the firewood when somebody has shown his hand: a riichi, or two calls
+        return !p.riichi && round.players.some(q => q.seat !== seat && !(hasAlly(P) && q.seat === P.ally) && (q.riichi || q.melds.length >= 2));
+      }
+      if (skill === 'probe') {
+        // beat the grass once his own hand is nearly there and the hand is still young enough to matter
+        return round.wall.length >= 12 && Hand.shanten(Tiles.counts(p.hand.map(typeOf)), p.melds.length) <= 1;
+      }
       if (skill === 'flow') {
         if (round.wall.length < 8) return false;
         if (p.riichi) return true;

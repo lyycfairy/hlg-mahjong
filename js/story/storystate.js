@@ -11,8 +11,15 @@
  *       { seat, chi: '456m', from: 3 }          likewise, into the run named
  *       { seat, kan: '2s' }                     four from the hand; with `from`, three and the pond tile
  *       { dora: '1s' }                          one more dora indicator is turned up
- *       { seat, ron: '5p', from: 2 }  { seat, tsumo: '8p' }   the hand is won and laid open
- *       { seat, reveal: true }                  the opaque tiles of a hand are turned face up
+ *       { seat, ron: '5p', from: 2 }  { seat, tsumo: '8p' }   the hand is won and laid open; the result carries
+ *                                               `value`: what the hand is worth (TableMoves.value)
+ *       { seat, reveal: true }                  the opaque tiles of a hand are turned face up; on a table
+ *                                               without glass tiles the whole hand is (what somebody
+ *                                               standing behind that player sees)
+ *
+ *   TableMoves.value(table, move)   score a winning move the way the engine would: the Yaku.evaluate result
+ *                                   plus `pay` (Yaku.payments). null for a hand with a kan, which the engine
+ *                                   does not score - such a move may name its limit itself (limit: 'yakuman').
  *
  *   Stakes.apply(state, cmd)        Washizu mahjong's ledger: { blood, lethal, funds, won }
  *       { stakes: {...} | false }   set it (or put it away)
@@ -24,6 +31,8 @@
   'use strict';
   const isNode = typeof module !== 'undefined' && module.exports;
   const Tiles = isNode ? require('../mahjong/tiles.js') : root.Tiles;
+  const Hand = isNode ? require('../mahjong/hand.js') : root.Hand;
+  const Yaku = isNode ? require('../mahjong/yaku.js') : root.Yaku;
 
   const parse = s => Tiles.parse(s || '');
   const str = types => types.map(t => Tiles.code(t)).join('');
@@ -49,6 +58,11 @@
     apply(table, m) {
       const me = table.me || 0;
       delete table.call;
+      // who may still win "in one turn": at first, whoever's riichi is the last tile of his pond
+      if (!table.ippatsu) {
+        table.ippatsu = {};
+        table.seats.forEach((s, k) => { if (s.riichi != null && parse(s.river).length - 1 === s.riichi) table.ippatsu[k] = true; });
+      }
       if (m.dora) {
         table.dora = (table.dora || '') + Tiles.code(one(m.dora));
         return { kind: 'dora' };
@@ -83,6 +97,8 @@
         forget(t, m.opaque);
         seat.river = (seat.river || '') + Tiles.code(t);
         if (m.riichi) seat.riichi = parse(seat.river).length - 1;
+        // a riichi may be won "in one turn" until its owner throws again or somebody calls
+        if (m.riichi) table.ippatsu[m.seat] = true; else delete table.ippatsu[m.seat];
         table.last = { seat: m.seat };
         if (m.riichi) table.call = { seat: m.seat, kind: 'riichi' };
         return { kind: m.riichi ? 'riichi' : 'discard', seat: m.seat, tile: t };
@@ -90,6 +106,7 @@
 
       // a call: the last tile of the discarder's pond is taken up
       const called = (t) => {
+        table.ippatsu = {};
         const from = table.seats[m.from];
         const pond = parse(from && from.river);
         if (!pond.length || pond[pond.length - 1] !== t) throw new Error(who + ' calls ' + Tiles.code(t) + ', which is not the last tile of seat ' + m.from + "'s pond");
@@ -128,7 +145,7 @@
         const t = one(m.kan);
         settle();
         const fromHand = m.from == null ? 4 : 3;
-        if (m.from != null) called(t);
+        if (m.from != null) called(t); else table.ippatsu = {};
         for (let k = 0; k < fromHand; k++) { seat.hand = take(seat.hand, t, who + ' kans'); }
         if (has(seat.opaque, t)) seat.opaque = take(seat.opaque, t, who);
         (seat.melds = seat.melds || []).push(str([t, t, t, t]));
@@ -151,14 +168,41 @@
         delete seat.opaque;                 // the hand is laid open
         table.win = { seat: m.seat, tile: Tiles.code(t), from: m.ron ? m.from : null };
         table.call = { seat: m.seat, kind: m.ron ? 'ron' : 'tsumo' };
-        return { kind: m.ron ? 'ron' : 'tsumo', seat: m.seat, tile: t };
+        return { kind: m.ron ? 'ron' : 'tsumo', seat: m.seat, tile: t, value: TableMoves.value(table, m) };
       }
 
       if (m.reveal) {
         delete seat.opaque;
+        seat.open = true;                   // on an ordinary table: the hand is shown face up from now on
         return { kind: 'reveal', seat: m.seat };
       }
       throw new Error('unknown table move: ' + JSON.stringify(m));
+    },
+
+    /**
+     * What the winning move `m` is worth on this table (call it once the move has been applied: a
+     * self-drawn tile is then already out of the hand). The Yaku.evaluate result with `pay` and `total`
+     * added; null when the hand cannot be scored (it holds a kan, is not complete, or has no yaku).
+     */
+    value(table, m) {
+      const seat = table.seats[m.seat];
+      const win = one(m.ron || m.tsumo);
+      const melds = (seat.melds || []).map(parse);
+      if (melds.some(x => x.length === 4)) return null;
+      const concealed = parse(seat.hand).concat(parse(seat.draw)).concat([win]);
+      if (!Hand.isAgari(Tiles.counts(concealed), melds.length)) return null;
+      // in one turn: the riichi is the last tile of his pond and nobody has called since
+      const pondLen = parse(seat.river).length;
+      const ippatsu = seat.riichi != null && (table.ippatsu ? !!table.ippatsu[m.seat] : pondLen - 1 === seat.riichi);
+      const res = Yaku.evaluate({
+        concealed, winTile: win, tsumo: !!m.tsumo,
+        melds: melds.map(t => ({ type: t[0] === t[1] ? 'pon' : 'chi', tiles: t })),
+        seatWind: 27 + (m.seat - table.dealer + 4) % 4, roundWind: 27 + (table.roundWind || 0),
+        doraIndicators: parse(table.dora), uraIndicators: parse(table.ura), riichi: seat.riichi != null, ippatsu,
+      });
+      if (!res) return null;
+      const pay = Yaku.payments(res.base, m.seat === table.dealer, !!m.tsumo, table.honba || 0);
+      return Object.assign({}, res, { pay, total: pay.total });
     },
 
     /** every tile a seat holds: hand, drawn tile and melds (the winning tile is not among them) */

@@ -90,6 +90,27 @@
     flatline() { tone(990, 2.2, 0.07, 'sine'); },
     // money changing hands
     coin() { tone(1568, 0.07, 0.05, 'triangle'); setTimeout(() => tone(2093, 0.12, 0.045, 'triangle'), 60); },
+    // the limit-hand win effect (js/ui/winfx.js): a blade through the air, the name landing (heavier with
+    // the level, heaviest on its last character), then a rising run for the player's own hand - longer and
+    // higher the bigger the hand - or a falling toll when it is won against him
+    slash() { noise(0.22, 3400, 0.7, 0.3, 'highpass'); noise(0.12, 900, 1.2, 0.18); },
+    impact(level, last) {
+      const g = Math.min(0.5, 0.2 + 0.045 * level + (last ? 0.08 : 0));
+      tone(78 - level * 5, 0.45 + 0.09 * level, g, 'sine');
+      noise(0.22 + 0.03 * level, 160, 0.6, g, 'lowpass');
+      if (last) noise(0.5, 2600, 0.5, 0.08 + 0.02 * level, 'highpass');
+    },
+    fanfare(level) {
+      const scale = [392, 523, 659, 784, 1047, 1319, 1568, 2093];
+      const n = Math.min(scale.length, 3 + level);
+      for (let i = 0; i < n; i++) setTimeout(() => { tone(scale[i], 0.55, 0.11, 'triangle'); if (level >= 4) tone(scale[i] / 2, 0.6, 0.06, 'sawtooth'); }, i * (level >= 5 ? 110 : 85));
+      if (level >= 5) setTimeout(() => [523, 659, 784, 1047].forEach(f => tone(f, 1.6, 0.07, 'triangle')), n * 110 + 60);
+    },
+    doom(level) {
+      const scale = [220, 185, 147, 110, 82, 62];
+      const n = Math.min(scale.length, 2 + Math.ceil(level / 1.5));
+      for (let i = 0; i < n; i++) setTimeout(() => tone(scale[i], 0.9, 0.13, 'sawtooth'), i * 170);
+    },
     text() { /* reserved for a typewriter tick */ },
 
     thunder() {

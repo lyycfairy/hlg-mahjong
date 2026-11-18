@@ -76,7 +76,7 @@
         stopWhen: () => !!(this.blood && this.blood.dead),
         pauseAfter: st.pause || null,
         skills: this.board,
-        setup: this.opening ? dealer => Scenario.build(Object.assign({ dealer }, this.opening.scenario)) : null,
+        setup: this.opening && this.opening.scenario ? dealer => Scenario.build(Object.assign({ dealer }, this.opening.scenario)) : null,
         onEvent: (e, r) => this.onEvent(e, r),
       });
       let final;
@@ -439,6 +439,18 @@
       return info;
     }
 
+    /** a hand worth a mangan or more: the limit-hand effect, grander the bigger the hand (js/ui/winfx.js) */
+    winFx(res) {
+      const sc = res.score;
+      const level = WinFx.tier(sc);
+      if (!level || this.aborted) return Promise.resolve();
+      return WinFx.play(this.el, {
+        level, score: sc, mine: res.winner === 0, fast: this.speed < 1,
+        kicker: T('winfx.kicker', { call: T(res.tsumo ? 'res.tsumo' : 'res.ron'), name: this.name(res.winner) }),
+        sub: sc.yakuman ? sc.yaku.map(y => I18n.yakuName(y)).join(' · ') : T('winfx.points', { n: fmt(res.pay.total) }),
+      });
+    }
+
     cutin(seat, skill) {
       const stage = this.stage;
       const [who, face] = String(stage.portraits[seat]).split(':');
@@ -605,8 +617,10 @@
       if (this.openingStage !== 'later') return;
       this.openingStage = 'done';
       const o = this.openingOption;
-      // only if the hand really ended the way the option says (a win for 'ron', a deal-in otherwise)
-      const happened = res.type === 'win' && (o.id === 'ron' ? res.winner === 0 : res.loser === 0);
+      // only if the hand really ended the way the option says: `when` is 'win' (the player's), 'dealin'
+      // (off the player) or 'any' - by default a win for 'ron' and a deal-in for everything else
+      const when = o.when || (o.id === 'ron' ? 'win' : 'dealin');
+      const happened = when === 'any' || (res.type === 'win' && (when === 'win' ? res.winner === 0 : res.loser === 0));
       if (!happened) return;
       await this.scene(o.later);
       await this.applyEffects(o.laterEffects);
@@ -644,6 +658,7 @@
           if (this.openingStage === 'pending' && !this._preluded) {
             this._preluded = true;
             await this.scene(this.opening.prelude);
+            await this.applyEffects(this.opening.effects);          // what the story has already settled
             if (this.opening.kind === 'choice') await this.openingChoice(round);
           }
           break;
@@ -676,6 +691,7 @@
           if (evt.result.winner === 0) Sfx.win(); else Sfx.lose();
           Voice.call(this.voiceOf(evt.result.winner), evt.result.tsumo ? 'tsumo' : 'ron');
           await this.bubble(evt.result.winner, T(evt.result.tsumo ? 'call.tsumo' : 'call.ron'), 1100);
+          await this.winFx(evt.result);
           break;
         case 'swap':
           this.lastDiscard = { seat: evt.from, tile: evt.out };
@@ -782,7 +798,9 @@
           ? `<div class="seat-read ready"><span>${esc(T('read.waits'))}</span>${info.waits[seat].map(t => TileView.type(t, 'xs')).join('')}</div>`
           : `<div class="seat-read"><span>${esc(T('read.noten'))}</span></div>`;
       }
-      const watching = this.board.active[seat] === 'insight' ? `<div class="seat-status">${esc(T('status.reading'))}</div>` : '';
+      const act = this.board.active[seat];
+      const watching = act === 'insight' ? `<div class="seat-status">${esc(T('status.reading'))}</div>`
+        : act === 'probe' ? `<div class="seat-status">${esc(T('status.probing'))}</div>` : '';
       this.$('.b-seat[data-seat="' + seat + '"]').innerHTML = `
         <div class="seat-card ${turn ? 'turn' : ''} ${p.riichi ? 'in-riichi' : ''}">
           <div class="seat-head">
@@ -832,19 +850,27 @@
       return `<div class="funds${this.fundsFlash ? ' blink' : ''}">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
     }
 
+    /** what a seat's skill does, in words (a skill aimed at somebody names him) */
+    skillDesc(seat) {
+      const k = this.board.skillOf(seat), w = this.board.watchOf(seat);
+      if (w != null) return T('skill.insight.watch', { target: this.name(w) });
+      const aim = this.board.seats[seat] ? this.board.seats[seat].watch : null;
+      return T('skill.' + k + '.desc', { target: this.name(aim != null ? aim : 0) });
+    }
+
     /** the rage gauge of a seat that owns a skill */
     gaugeHtml(seat) {
       const skill = this.board.skillOf(seat);
       if (!skill) return '';
       const g = Math.round(this.board.gauge(seat));
       const active = this.board.active[seat];
-      const cls = active ? 'active' : (this.board.ready(seat) ? 'ready' : '');
+      const cls = active ? 'active' : this.board.shook(seat) ? 'sealed' : (this.board.ready(seat) ? 'ready' : '');
       let label = T('skill.' + skill);
       if ((active === 'flow' || active === 'fortune') && this.board.flowLeft[seat] > 0) label += ' ×' + this.board.flowLeft[seat];
       if (active === 'allin') label += ' ×' + this.board.stakes(seat);
+      if (active === 'starve' && this.board.starveLeft[seat] > 0) label += ' ×' + this.board.starveLeft[seat];
       if (skill === 'sleight') label += ' ×' + this.board.usesLeft(seat);
-      const watch = this.board.watchOf(seat);
-      const desc = watch != null ? T('skill.insight.watch', { target: this.name(watch) }) : T('skill.' + skill + '.desc');
+      const desc = this.skillDesc(seat);
       if (this.board.passive(seat)) {      // a standing trait: its name, no gauge to fill
         return `<div class="gauge passive ${active ? 'active' : ''}" title="${esc(T('skill.' + skill) + ' - ' + desc)}">` +
           `<span class="gauge-icon skill-${skill}"></span><span class="gauge-label">${esc(label)}</span></div>`;
@@ -894,6 +920,8 @@
       const watched = [1, 2, 3].filter(s => this.board.active[s] === 'insight');
       this.$('.b-handrow').classList.toggle('watched', watched.length > 0);
       this.$('.b-handrow').dataset.watch = watched.length ? T('status.watched', { name: I18n.list(watched.map(s => this.name(s))) }) : '';
+      this.$('.b-handrow').classList.toggle('shaken', this.board.shook(0));
+      this.$('.b-handrow').dataset.shaken = T('status.shaken');
 
       let html = '';
       const tileHtml = id => {
@@ -925,7 +953,7 @@
           const skill = this.board.skillOf(0);
           if (skill && this.board.ready(0) && !((skill === 'insight' || skill === 'sleight') && p.riichi)) {
             acts += button('btn-skill', 'skill', `<span class="gauge-icon skill-${skill}"></span>` + esc(T('act.skill', { skill: T('skill.' + skill) })),
-              `title="${esc(T('skill.' + skill + '.desc'))}"`);
+              `title="${esc(this.skillDesc(0))}"`);
           }
         }
       } else if (pend && pend.kind === 'call') {
@@ -1004,10 +1032,7 @@
     showIntro() {
       const st = this.stage;
       // what a seat's skill does (a watching Insight says whom it watches)
-      const skillDesc = s => {
-        const k = this.board.skillOf(s), w = this.board.watchOf(s);
-        return w != null ? T('skill.insight.watch', { target: this.name(w) }) : T('skill.' + k + '.desc');
-      };
+      const skillDesc = s => this.skillDesc(s);
       const skillCell = s => {
         const k = this.board.skillOf(s);
         return k ? `<span title="${esc(skillDesc(s))}"><span class="gauge-icon skill-${k}"></span>${esc(T('skill.' + k))}</span>` : '';
@@ -1040,9 +1065,9 @@
           <div class="goal-box"><span>${esc(T('intro.clear'))}</span>${esc(P(st.goal.text))}</div>
           <table class="score-table intro-table"><caption>${esc(T('intro.start', { round: roundName }))}</caption>${rows}</table>
           <ul class="role-list">${roles}</ul>
-          ${mine ? `<p class="small">${T(Skills.DEFS[mine] && Skills.DEFS[mine].cost ? 'intro.skillCost' : 'intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(T('skill.' + mine + '.desc')) })}</p>` : ''}
+          ${mine ? `<p class="small">${T(Skills.DEFS[mine] && Skills.DEFS[mine].cost ? 'intro.skillCost' : 'intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(this.skillDesc(0)) })}</p>` : ''}
           ${foeSkills ? `<ul class="role-list skill-list">${foeSkills}</ul>` : ''}
-          ${st.opening ? `<p class="small opening-note">${esc(T(st.opening.auto || st.opening.kind === 'scene' ? 'intro.openingScene' : 'intro.opening'))}</p>` : ''}
+          ${st.opening && st.opening.scenario ? `<p class="small opening-note">${esc(T(st.opening.auto || st.opening.kind === 'scene' ? 'intro.openingScene' : 'intro.opening'))}</p>` : ''}
           <div class="intro-buttons">
             <button class="btn btn-primary" data-ov="go">${esc(T('intro.go'))}</button>
             ${this.opts.context === 'story' ? `<button class="btn" data-ov="skipmatch" title="${esc(T('b.skipTip'))}">${esc(T('intro.skip'))}</button>` : ''}

@@ -270,7 +270,30 @@
         else if (r.kind === 'pon' || r.kind === 'chi' || r.kind === 'kan') Sfx.call();
         else if (r.kind === 'ron' || r.kind === 'tsumo') Sfx.win();
         await this.pause(HOLD[r.kind] || 300);
+        if (r.kind === 'ron' || r.kind === 'tsumo') await this.winFx(m, r);
       }
+    }
+
+    /**
+     * A hand won on the story's table: a mangan or more gets the limit-hand effect (js/ui/winfx.js).
+     * The value is what the tiles on the table come to; a hand the engine cannot score (one with a kan)
+     * names its limit on the move: { ron, limit: 'yakuman' | 'kazoe' | 'yakuman2' | 'baiman' ... }.
+     */
+    async winFx(m, r) {
+      const level = WinFx.tier(m.limit || r.value);
+      if (!level || this.dead) return;
+      const me = this.table.me || 0;
+      const multi = /^yakuman(\d+)$/.exec(m.limit || '');
+      const title = m.limit ? (multi ? I18n.t('limit.multi', { n: +multi[1] }) : I18n.t('limit.' + m.limit)) : I18n.limitName(r.value);
+      const v = m.limit ? null : r.value;
+      const sub = v ? (v.yakuman ? v.yaku.map(y => I18n.yakuName(y)).join(' · ') : I18n.t('winfx.points', { n: v.total.toLocaleString('en-US') })) : '';
+      const was = this.paused;
+      this.paused = true;                  // a click skips the effect, not the story's next line
+      await WinFx.play(this.el, {
+        level, title, sub, mine: m.seat === me, fast: this.skip,
+        kicker: I18n.t('winfx.kicker', { call: I18n.t(m.ron ? 'res.ron' : 'res.tsumo'), name: TableBoard.nameOf(this.table, m.seat) }),
+      });
+      this.paused = was;
     }
 
     /* ---- Washizu mahjong: the ledger, the rack ---------------------- */

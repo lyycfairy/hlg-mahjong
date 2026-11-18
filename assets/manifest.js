@@ -21,6 +21,14 @@ window.AssetManifest = {
   "fx_allin": "low",
   "fx_fortune": "medium",
   "fx_collusion": "medium",
+  "fx_starve": "low",
+  "fx_probe": "low",
+  "icon_ch5": "low",
+  "fx_win_mangan": "low",
+  "fx_win_haneman": "low",
+  "fx_win_baiman": "low",
+  "fx_win_sanbaiman": "low",
+  "fx_win_yakuman": "low",
   "icon_prologue": "medium",
   "bg_city": "medium",
   "bg_parlor": "low",
@@ -395,9 +403,17 @@ window.AssetManifest = {
    744,
    753
   ],
+  "ui/icon_probe.webp": [
+   776,
+   767
+  ],
   "ui/icon_sleight.webp": [
    1008,
    1024
+  ],
+  "ui/icon_starve.webp": [
+   770,
+   767
   ],
   "ui/ivory.jpg": [
    512,
@@ -471,6 +487,10 @@ window.AssetManifest = {
    1600,
    900
   ],
+  "fx/probe.jpg": [
+   1600,
+   900
+  ],
   "fx/sleight.jpg": [
    1600,
    900
@@ -478,6 +498,30 @@ window.AssetManifest = {
   "fx/splash.webp": [
    384,
    377
+  ],
+  "fx/starve.jpg": [
+   1600,
+   900
+  ],
+  "fx/win_baiman.jpg": [
+   1600,
+   900
+  ],
+  "fx/win_haneman.jpg": [
+   1600,
+   900
+  ],
+  "fx/win_mangan.jpg": [
+   1600,
+   900
+  ],
+  "fx/win_sanbaiman.jpg": [
+   1600,
+   900
+  ],
+  "fx/win_yakuman.jpg": [
+   1600,
+   900
   ]
  }
 };

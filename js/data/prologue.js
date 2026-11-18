@@ -694,7 +694,7 @@
       { who: 'washizu', emo: 'cold', text: Z('……一筒，四张全都看得见了啊。') },
       { who: 'washizu', emo: 'command', text: Z('铃木。喂过来。') },
       { who: 'suzuki', emo: 'flat', text: Z('是。') },
-      { move: [{ seat: 3, draw: '2z' }, { seat: 3, discard: '1p' }, { seat: 2, ron: '1p', from: 3 }] },
+      { move: [{ seat: 3, draw: '2z' }, { seat: 3, discard: '1p' }, { seat: 2, ron: '1p', from: 3, limit: 'kazoe' }] },      // riichi and twelve dora: the engine does not score a kan hand
       { fx: 'zawa' },
       { who: 'washizu', emo: 'joy', text: Z('荣！立直，宝牌十二——役满，四万八千点！') },
       { text: Z('放铳的是铃木。赤木一滴血也没有被抽。') },

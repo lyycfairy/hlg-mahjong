@@ -44,11 +44,25 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   boy who walks in from the rain. Chapter 2, **瞒天过海** ("deceive the heavens to cross the sea"): Akagi's
   first hanchan, the police at the door, and a hand built out of the discards while every eye is on the
   doorway. Chapter 3, **借刀杀人** ("kill with a borrowed knife"): the alibi, the restart, and the triple yakuman
-  with a detective at the table to witness it. The chapter titles from here on are taken from the Thirty-Six
-  Stratagems. Chapters 2 and 3 follow the first episode of the anime and are **in Chinese only for now**; the
-  other languages follow once they are final.
-- **Battle Mode** — the two prologue matches (always open), then four stages: *The Stormy Night*, 瞒天过海 and
-  借刀杀人 (Chinese for now), and *The Substitute* (李代桃僵 in Chinese). Clearing a stage unlocks the next.
+  with a detective at the table to witness it. Chapter 4, **见微知著** ("from one small sign, the whole"): the
+  dora thrown straight at Ryuzaki's riichi, "the three voices of the discards", and the glance that gives his wait
+  away. Chapter 5, **釜底抽薪** ("take the firewood from under the pot"): the hired professional Yagi arrives and
+  only watches, while the boy throws away a pair of red dragons to kill a Big Three Dragons and holds the 8s his
+  neighbour is waiting for until it is a triplet in his own hand. Chapter 6, **欲擒故纵** ("let go, in order to
+  catch"): a finger wagered for every 100,000 yen, Yagi's riichi made only to watch the boy flinch, the win Yagi
+  lets go by - and the self-drawn mangan Akagi does not declare. Chapter titles are four-character idioms, from
+  the Thirty-Six Stratagems where one fits. Chapters 2-3 follow the first episode of the anime and 4-6 the second;
+  they are **in Chinese only for now**, the other languages follow once they are final. As in the prologue, their
+  hands are played out on the table move by move, and the roads the story did not take can be tried - and lead back.
+- **Battle Mode** — the two prologue matches (always open), then six stages: *The Stormy Night*, 瞒天过海,
+  借刀杀人, 见微知著, 釜底抽薪 and 欲擒故纵 (all but the first in Chinese for now). Clearing a stage unlocks the next.
+- **The limit-hand effect** — whenever anyone wins a hand worth a mangan or more, at a match table or on a table
+  in the story, the table gives way to a painted scene with the name of the limit struck across it, and the
+  bigger the hand, the grander the scene: the hawk for a mangan (a band across the table), the carp leaping
+  the Dragon Gate for a haneman, the tiger for a baiman (from here the whole screen, with lightning and rising
+  embers), the phoenix for a sanbaiman, and for a yakuman a moment of darkness and then the dragon in gold, the
+  yaku named beneath it - longer and louder again for a double yakuman. Gold when the hand is yours, blood red when
+  it is won against you. A click skips it.
 - **Skills** — in Chinese every skill is named with a four-character idiom, and the briefing before a match
   explains each skill at the table:
   - **洞若观火** (*Insight*, "to see as clearly as watching a fire") — see through every hand at the table;
@@ -66,13 +80,18 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   - **洪福齐天** (*Heaven's Favour*, "good fortune as high as the sky") — Washizu's luck: two perfect draws.
   - **里应外合** (*Inside Job*, "those inside answer those outside") — the partners' standing trait: they keep
     the tiles their man needs, and the moment he declares riichi they throw him his winning tile.
+  - **釜底抽薪** (*Pull the Firewood*) — Akagi's, in Chapter 5: he sees through every opponent, his next three
+    draws are the tiles they are waiting on - taken before they can reach them - and none of them can draw his
+    own winning tile.
+  - **打草惊蛇** (*Beat the Grass*, "beat the grass to startle the snake") — Yagi's, in Chapter 6: a move made
+    only to see how the other man reacts. For the rest of the hand its target is shaken: no skill, no reading.
 - **Decision scenes** — when the story reaches a discard that matters, the table is laid out with the real
   hand, and every tile shows where it leads: ready or not, the waits and how many are left, what the hand
   pays, and how dangerous the tile is. A commentary goes with it in text and, if your browser has a voice
   for the language, aloud.
 - **Opening scenes** — each match starts in the middle of its first hand, at a moment from the story. In
-  *The Stormy Night* Akagi takes a cheap win off the very first discard, as he does in the story; in *The
-  Substitute* the choice is yours, and it changes the rest of the match and the story told afterwards.
+  *The Stormy Night* Akagi takes a cheap win off the very first discard, as he does in the story; in 欲擒故纵
+  the choice is yours: trust the reading and throw the 6m into Yagi's riichi, or fold.
 - **Skills and rage gauges** — anyone with a skill has a gauge that fills as they draw, call, declare
   riichi, win or get hit. A full gauge fires the skill, with a cut-in. In *The Stormy Night* Akagi plays
   without one, and after that first win Ryuzaki starts watching him: whenever Ryuzaki's gauge is full while
@@ -145,10 +164,19 @@ Only the files needed to play:
   两场在玻璃牌桌上进行的对局（画面上有抽血量和鹫巢剩下的资金）：南一局的五万伏击《请君入瓮》，以及已抽血一千四百cc时的第五个半庄《人血麻将》。
   新技能：孤注一掷（这一局押上的血与钱翻倍）、洪福齐天（鹫巢的强运）、里应外合（搭档一立直就喂牌）。
 - **内容**——故事模式第一章《暴风雨之夜》、第二章《瞒天过海》（警察找上门、所有人望向门口的那一刻，赤木从牌河里掉包，做成大三元＋四暗刻单骑的听牌）、
-  第三章《借刀杀人》（不在场证明、浑水摸鱼重开牌局、龙崎打出的西风——三倍役满）；第二、三章根据动画第一集改编，目前只有中文。对战模式除序章的两场外共四关（过一关开启下一关）；
-  技能均以四字成语命名，对局前的介绍会逐一解释：洞若观火、时来运转、移花接木、浑水摸鱼、明察秋毫；抉择场景会摆出真实手牌，并分析每一张牌的
+  第三章《借刀杀人》（不在场证明、浑水摸鱼重开牌局、龙崎打出的西风——三倍役满）；
+  第四章《见微知著》（迎着龙崎的立直打出宝牌五索、“舍牌的三种声音”、立直后的一个眼神）、
+  第五章《釜底抽薪》（代打矢木到场却只是旁观；赤木拆掉红中对子封死大三元，把上家要和的八索攥成暗刻）、
+  第六章《欲擒故纵》（一根手指抵十万的差马、矢木试探用的抢跑立直、故意放过的和牌，以及赤木没有倒下的那手自摸满贯）；
+  第二、三章根据动画第一集、第四至六章根据第二集改编，目前只有中文，牌局同样在牌桌上一手一手地演出，原作没走的路也可以试一试再回来。
+  对战模式除序章的两场外共六关（过一关开启下一关）。
+  **和牌特效**——无论对局还是故事里的牌桌，只要有人和出满贯以上的牌，就会播放一段水墨动画，牌越大场面越大：
+  满贯“鹰击长空”、跳满“鱼跃龙门”、倍满“猛虎下山”（从这里起占满整个画面，带闪电和火星）、三倍满“凤凰涅槃”、
+  役满则先暗场片刻再现出金色的“飞龙在天”并列出役名，多倍役满更长更响；自己和牌是金色，被别人和是血红色，点击可跳过。
+  技能均以四字成语命名，对局前的介绍会逐一解释：洞若观火、时来运转、移花接木、浑水摸鱼、明察秋毫，以及新增的
+  釜底抽薪（看穿所有对手，接下来三次摸牌抢先摸走对手正在等的牌，对手自己也摸不到）和打草惊蛇（矢木的技能：这一局里让目标心神动摇，无法发动技能，读牌失灵）；抉择场景会摆出真实手牌，并分析每一张牌的
   走向（是否听牌、听哪些牌、打点、危险度），配有文字和语音解说；每场对局都从故事中的一个场景开始（第一关里赤木照原作那样，
-  拿下第一张便宜的和牌；第二关由你抉择）；技能与怒气槽——第一关赤木没有技能，而龙崎在第一局后学会“洞察”：
+  拿下第一张便宜的和牌；第六关面对矢木的立直，信自己的读牌打出六万还是退，由你抉择）；技能与怒气槽——第一关赤木没有技能，而龙崎在第一局后学会“洞察”：
   怒气槽蓄满时只要赤木听牌就会自动发动，那一局里他绝不会打出赤木所听的牌；四种类型的电脑玩家（进攻型、协作型、独立型，以及序章里只为搭档而打的辅助型）；所有角色台词均有中、日、英三语配音，每个角色的声音按年龄和性格挑选。
 - **不会打麻将？** 标题画面里有五分钟入门的“游戏说明”。
 - **尚未实现**——杠、赤宝牌、途中流局、流局满贯、一炮多响。
@@ -175,10 +203,16 @@ Only the files needed to play:
   採血の場面——黒服の男たち、針を刺した腕、500ccのシリンダー四本——が流れ、実際の量まで血が満ちていきます。精算では鷲巣の残り資金を札束（一束1000万円）で
   表示。相棒の安岡と鈴木は自分の手を捨てて相棒のために打ちます。麻雀がわからない方のために、物語中の対局にはすべて「対局をスキップ」ボタンがあります。ガラスの卓での対局が二つ（採血量と鷲巣の資金を表示）。
 - **内容**——ストーリーモード第一章「嵐の夜」、第二章「瞞天過海」、第三章「借刀殺人」（第二・三章はアニメ第一話にもとづき、現在は中国語版のみ。
-  刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。対局モードは序章の二局のほかに四ステージ（クリアすると次が開きます）。決断の場面では
+  刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。第四章「見微知著」（竜崎のリーチにドラの五索を通す、「捨て牌三種の声」、
+  リーチ後の視線）、第五章「釜底抽薪」（代打ちの矢木が現れるが、まずは見ているだけ。アカギは中の対子を落として大三元を封じ、上家の当たり牌の八索を暗刻にして握りつぶす）、
+  第六章「欲擒故縦」（指一本十万の差し馬、アカギの反応を見るための先制リーチ、見逃されたアガリ、そしてアカギが倒さなかったツモ満貫）。
+  第四〜六章はアニメ第二話にもとづき、こちらも現在は中国語版のみです。対局モードは序章の二局のほかに六ステージ（クリアすると次が開きます）。
+  **アガリ演出**——対局でも物語の卓でも、満貫以上の手がアガられると水墨画の演出が入り、手が大きいほど派手になります（満貫は鷹、跳満は登龍門の鯉、
+  倍満は虎で画面全体に、三倍満は鳳凰、役満は一瞬の暗転のあと金色の龍と役名。自分のアガリは金、相手のアガリは血の赤。クリックで飛ばせます）。
+  新しいスキルは「握り潰し」（釜底抽薪：全員の手を見抜き、相手の当たり牌を先に引き取る）と、矢木の「揺さぶり」（打草驚蛇：その局のあいだ相手はスキルも読みも使えない）。決断の場面では
   実際の手牌が卓に並び、どの牌を切るとどうなるか（テンパイかどうか、待ち、打点、危険度）が文字と音声の解説つきで
   示されます。各対局は物語の一場面から始まります（第一ステージではアカギが原作どおり
-  最初の安い当たり牌でアガり、第二ステージは自分で決断します）。スキルと怒気ゲージ——第一ステージのアカギはスキルを持たず、
+  最初の安い当たり牌でアガり、第六ステージでは矢木のリーチに対して自分の読みを信じるかどうかを自分で決めます）。スキルと怒気ゲージ——第一ステージのアカギはスキルを持たず、
   最初の局のあと竜崎が「看破」を身につけます。怒気ゲージが満タンのときアカギがテンパイすると自動で発動し、その局のあいだ
   竜崎はアカギの当たり牌を一枚も切りません。四タイプのコンピューター
   （攻撃型・連携型・単独型、序章の相棒は援護型）。登場人物のセリフはすべて日・中・英の三言語でボイスつき。声は年齢と人柄に合わせて一人ずつ選んでいます。

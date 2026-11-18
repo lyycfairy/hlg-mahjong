@@ -263,22 +263,10 @@
       { text: Z('——传说，从这一夜开始。') },
       { hide: 'all' },
       { bg: 'black' },
-      { card: Z('未完待续'), sub: Z('第四章·李代桃僵') },
+      { card: Z('未完待续'), sub: Z('第四章·见微知著') },
       { end: true, completed: true },
     ],
   };
 
-  const chapter4 = {
-    id: 'ch4',
-    no: 4,
-    title: L('The Substitute', '代打ち', '李代桃僵'),
-    summary: L(
-      'The yakuza send for a man who plays for a living.',
-      'ヤクザが呼んだのは、麻雀で飯を食う男。',
-      '李代桃僵：让别人替自己上阵。黑道请来了一个靠麻将吃饭的男人。'),
-    available: false,
-    script: [],
-  };
-
-  root.Story.add(chapter2, chapter3, chapter4);
+  root.Story.add(chapter2, chapter3);
 })(window);

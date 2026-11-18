@@ -150,7 +150,8 @@
      * It is drawn as a square mahjong table seen from the player's chair: the four ponds in the middle, each
      * facing the one who threw them, every hand along its own edge (the player's own, larger, below the table)
      * and a name plate in the corner to each player's right.
-     * `opts.win` (a tile code) lays the hand open with that tile as the winning one.
+     * `opts.win` (a tile code) lays the hand open with that tile as the winning one. A seat with
+     * `open: true` shows its hand face up (the story looking over that player's shoulder).
      * Washizu mahjong: with `glass: true` every tile is glass, and each seat may add `opaque` (the codes of
      * its opaque tiles) and `melds` (['2222s', ...]). The other seats' hands then show through the glass:
      * glass tiles face up, opaque ones as backs; in the player's own hand the opaque tiles stay ivory.
@@ -203,8 +204,8 @@
         const seat = table.seats[i];
         const glowHand = lit(i, 'hand');
         let tiles;
-        if (seat.hand && (table.glass || (win && win.seat === i))) {
-          // glass shows through; a hand that has won lies open
+        if (seat.hand && (table.glass || seat.open || (win && win.seat === i))) {
+          // glass shows through; a hand that has won lies open; `open` is a hand the story lets us look into
           const h = split(seat);
           tiles = h.shown.map(t => TileView.type(t, 'qr' + glass + (glowHand.has(t) ? ' focus' : ''))).join('') +
             h.hidden.map(() => TileView.back('qr' + (glowHand.has(-1) ? ' focus' : ''))).join('');
