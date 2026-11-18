@@ -76,7 +76,7 @@
     // the prologue: Washizu's mansion, 1965
     mansion: { css: 'storm', img: 'bg/mansion.jpg', rain: true },
     washizu: { css: 'parlor', img: 'bg/washizu.jpg' },
-    blood:   { css: 'parlor', img: 'bg/blood.jpg' },
+    blood:   { css: 'bloodroom' },                       // no picture: the rack is drawn from the blood actually taken
     basin:   { css: 'parlor', img: 'bg/basin.jpg' },
   };
 

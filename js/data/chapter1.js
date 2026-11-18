@@ -39,6 +39,29 @@
  *                                            at the stage's opening decision (see js/data/stages.js)
  *   { branch: 'flag', to: { value: 'label', '*': 'label' } }
  *   { end: true }
+ *
+ * A hand played out on the table (the prologue; the rules are in js/story/storystate.js):
+ *   { move: {...} | [{...}, ...] }           play moves on the table laid out, one after another:
+ *                                            { seat, draw: '5s' }  { seat, discard: '7s', riichi: true }
+ *                                            { seat, pon: '1z', from }  { seat, chi: '345s', from }
+ *                                            { seat, kan: '2s' }  { dora: '1s' }
+ *                                            { seat, ron: '5p', from }  { seat, tsumo: '8p' }
+ *                                            (a move may carry focus: {...} to light tiles up as it lands)
+ *   { focus: { seat, hand: '7s8s', river: '4m', opaque: true } }
+ *                                            light up the tiles the line is about (an array for several
+ *                                            seats); the next move clears it
+ *   decide: { apply: true, ... }             the tile the player chose goes to the pond before the story goes on
+ *
+ * Washizu mahjong's ledger - Akagi's blood and winnings, Washizu's funds - shown above the scene:
+ *   { stakes: { blood, lethal, funds, won } }   put it on screen / set it (tween: true counts up to it);
+ *                                            { stakes: false } takes it away. Jumping back to a label
+ *                                            restores the ledger as it stood there.
+ *   { bleed: 400 }                           blood is drawn: the rack fills in an animated scene
+ *   { pay: 2600000 }                         Washizu pays Akagi
+ *   { transfuse: 600, cost: 6000000 }        blood bought back
+ *   { rack: 400 | true | false }             the rack as a prop: filled to a level (to show what a rule
+ *                                            means), following the ledger (true), or gone
+ *   A cleared { battle } of a stage with blood / money carries its result into the ledger.
  * Use *asterisks* for emphasis inside text.
  *
  * A table: { me, dealer, roundWind, kyoku, dora, wall,

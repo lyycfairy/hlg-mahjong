@@ -400,14 +400,15 @@
     }
 
     /** the blood leaving the player's arm: a red pulse and a line for every draw */
+    /** blood was lost on this hand: the rack fills in front of the player, up to the real total */
     async bloodScene(stakes) {
       if (!stakes || !stakes.cc) return;
       const b = this.blood;
-      this.el.classList.remove('bleeding'); void this.el.offsetWidth; this.el.classList.add('bleeding');
-      Sfx.riichi();
-      await this.scene([{ note: T('blood.draw', { cc: stakes.cc, total: b.drawn, lethal: b.lethal }) }]
-        .concat(b.dead ? [{ note: T('blood.dead', { name: this.name(b.seat), lethal: b.lethal }) }] : []));
-      this.el.classList.remove('bleeding');
+      await BloodRack.sequence(this.el, { from: b.drawn - stakes.cc, to: b.drawn, lethal: b.lethal, fast: this.speed < 0.2 });
+      this.bloodPending = 0;
+      if (this.aborted) return;
+      this.render();
+      if (b.dead) await this.scene([{ note: T('blood.dead', { name: this.name(b.seat), lethal: b.lethal }) }]);
     }
 
     /** what the player currently sees through: who is ready, on what, and which own tiles deal in */
@@ -678,7 +679,10 @@
           break;
         case 'round-end': {
           const stakes = this.settleStakes(evt.result);
+          this.bloodPending = stakes.cc;          // the rack fills in the drawing scene, after the result
+          this.fundsFlash = stakes.yen > 0;
           this.render();
+          this.fundsFlash = false;
           await this.showRoundResult(evt.result, round, evt.over || !!(this.blood && this.blood.dead));
           await this.bloodScene(stakes);
           await this.openingAftermath(evt.result);
@@ -785,16 +789,17 @@
     bloodHtml(seat) {
       const b = this.blood;
       if (!b || b.seat !== seat) return '';
-      const pct = Math.min(100, Math.round(b.drawn / b.lethal * 100));
-      return `<div class="blood ${pct >= 80 ? 'near' : ''}" title="${esc(T('blood.tip', { lethal: b.lethal }))}">` +
-        `<span class="blood-bar"><i style="--b:${pct}"></i></span><span class="blood-label">${esc(T('blood.label', { drawn: b.drawn, lethal: b.lethal }))}</span></div>`;
+      // while the hand's blood is still to be drawn (the result screen comes first) the rack shows the old level
+      const shown = b.drawn - (this.bloodPending || 0);
+      return `<div class="blood ${shown >= BloodRack.DANGER ? 'near' : ''}" title="${esc(T('blood.tip', { lethal: b.lethal }))}">` +
+        `${BloodRack.html(shown, b.lethal, 'mini')}<span class="blood-label">${esc(T('blood.label', { drawn: shown, lethal: b.lethal }))}</span></div>`;
     }
 
     /** Washizu mahjong: the money the other side still has to lose */
     fundsHtml(seat) {
       const m = this.money;
       if (!m || m.seat !== seat) return '';
-      return `<div class="funds">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
+      return `<div class="funds${this.fundsFlash ? ' flash' : ''}">${esc(T('money.funds', { n: I18n.yen(m.funds) }))}</div>`;
     }
 
     /** the rage gauge of a seat that owns a skill */

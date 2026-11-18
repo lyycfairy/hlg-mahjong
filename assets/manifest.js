@@ -15,7 +15,6 @@ window.AssetManifest = {
   "suzuki": "medium",
   "bg_mansion": "medium",
   "bg_washizu": "medium",
-  "bg_blood": "medium",
   "bg_basin": "low",
   "fx_allin": "low",
   "fx_fortune": "medium",
@@ -47,10 +46,6 @@ window.AssetManifest = {
    900
   ],
   "bg/battle.jpg": [
-   1600,
-   900
-  ],
-  "bg/blood.jpg": [
    1600,
    900
   ],

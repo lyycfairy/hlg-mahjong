@@ -160,7 +160,7 @@
           { id: 'other', tiles: '*' },
         ],
       },
-      scores: [26000, 18500, 40000, 15500],
+      scores: [26000, 21000, 40000, 13000],          // as the story's East 4 leaves them
       firstDealer: 1,
       startWind: 1,
       startKyoku: 0,

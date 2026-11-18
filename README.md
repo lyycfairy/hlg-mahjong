@@ -29,8 +29,11 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
   death. It follows the anime's Washizu arc (episodes 16–26): Akagi demanding the stakes be raised tenfold, the
   riichi-and-feed, the "second river", the 5m ambush, the transfusions he refuses, the 1p trap and the basin of
   blood. Every decision that matters is yours, and each road the story did not take ends in an ending of its
-  own (five of them, each with a way back). Two matches are played at the glass table, with a blood meter and
-  Washizu's dwindling fortune on screen: the 5m ambush (请君入瓮) and the fifth hanchan at 1,400cc (人血麻将).
+  own (five of them, each with a way back). The key hands are not summarised but played out on the table, move
+  by move, with the tiles Akagi is reading lit up; through every dialogue a bar shows the blood drawn and left,
+  Akagi's winnings and Washizu's shrinking funds; and whenever blood is lost, eight glass cylinders fill before
+  your eyes to the exact amount, the heartbeat quickening as the lethal line nears. Two matches are yours to play
+  at the glass table: the 5m ambush (请君入瓮) and the fifth hanchan at 1,400cc (人血麻将).
 - **Story Mode** — Chapter 1, *The Stormy Night*: a man gambling his life in a back-room game, and the
   boy who walks in from the rain. Chapter 2, **瞒天过海** ("deceive the heavens to cross the sea"): Akagi's
   first hanchan, the police at the door, and a hand built out of the discards while every eye is on the
@@ -127,6 +130,8 @@ Only the files needed to play:
   麻将牌四张里有三张是透明的玻璃牌，对手的手牌大半一览无余；赤木和鹫巢之间，一千点就是赤木的一百cc血，或鹫巢的一百万日元，抽满两千cc即死。
   根据动画第16–26集的“鹫巢麻将”篇改编：赤木要求把赌注提高十倍、立直后搭档马上喂牌、“第二条牌河”、五万单吊的伏击、两次拒绝补血、一筒的陷阱、
   倒进脸盆的血。关键抉择都交给玩家，偏离原作的路线各有一个原创结局（共五个，都能回到那一刻重选）；
+  关键牌局不再用文字概括，而是在牌桌上一手一手地演出来，赤木正在读的牌会亮起；对话全程显示赤木已抽的血量、离致死量还剩多少、
+  赢得的金额和鹫巢剩下的资金；每次抽血，八根量筒都会按实际的cc数当场涨上去，越接近致死线心跳越急；
   两场在玻璃牌桌上进行的对局（画面上有抽血量和鹫巢剩下的资金）：南一局的五万伏击《请君入瓮》，以及已抽血一千四百cc时的第五个半庄《人血麻将》。
   新技能：孤注一掷（这一局押上的血与钱翻倍）、洪福齐天（鹫巢的强运）、里应外合（搭档一立直就喂牌）。
 - **内容**——故事模式第一章《暴风雨之夜》、第二章《瞒天过海》（警察找上门、所有人望向门口的那一刻，赤木从牌河里掉包，做成大三元＋四暗刻单骑的听牌）、
@@ -155,7 +160,8 @@ Only the files needed to play:
   各牌四枚のうち三枚がガラスの「透明な牌」で、相手の手牌がほとんど透けて見えます。アカギと鷲巣のあいだでは千点がアカギの血100cc、
   または鷲巣の百万円。2000ccで死。アニメ第16〜26話の鷲巣麻雀編にもとづき、レートを十倍に吊り上げるアカギ、リーチと差し込み、
   「第二の河」、五萬単騎の待ち伏せ、拒み続ける輸血、一筒の罠、洗面器の血を描きます。重要な決断はすべてプレイヤーに委ねられ、
-  原作と違う道にはそれぞれ独自の結末があります（五つ。どれもその場面に戻れます）。ガラスの卓での対局が二つ（採血量と鷲巣の資金を表示）。
+  原作と違う道にはそれぞれ独自の結末があります（五つ。どれもその場面に戻れます）。要の局は文章ではなく卓の上で一打ずつ再現され、
+  会話のあいだも採血量・致死量までの残り・獲得金額・鷲巣の資金が常に表示されます。採血のたびに、八本のシリンダーが実際の量まで目の前で満ちていきます。ガラスの卓での対局が二つ（採血量と鷲巣の資金を表示）。
 - **内容**——ストーリーモード第一章「嵐の夜」、第二章「瞞天過海」、第三章「借刀殺人」（第二・三章はアニメ第一話にもとづき、現在は中国語版のみ。
   刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。対局モードは序章の二局のほかに四ステージ（クリアすると次が開きます）。決断の場面では
   実際の手牌が卓に並び、どの牌を切るとどうなるか（テンパイかどうか、待ち、打点、危険度）が文字と音声の解説つきで

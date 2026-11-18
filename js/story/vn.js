@@ -5,6 +5,10 @@
  * the dialogue ({ table }) and stop on a discard that matters ({ decide }),
  * where every tile of the hand shows where it leads.
  *
+ * A hand can also be played out on that table, move by move ({ move }, { focus } - the moves are
+ * js/story/storystate.js's), and Washizu mahjong keeps a ledger on screen ({ stakes }, { bleed },
+ * { pay }, { transfuse }) with the blood rack as a prop ({ rack }): see chapter1.js for the commands.
+ *
  *   const vn = new VN(hostEl, chapter, {
  *     onBattle: stageId => Promise<{ cleared }>,   // run a mahjong stage
  *     onEnd: cmd => {},                            // chapter finished ({ completed })
@@ -38,6 +42,9 @@
       this.paused = false; // true while a battle, a decision or the log is on screen
       this.flags = {};     // decisions taken so far: { flagName: optionId, opening: 'ron' | 'pass' | ... }
       this.table = null;   // the mahjong table currently laid out behind the text, if any
+      this.stakes = null;  // Washizu mahjong's ledger while it is on screen: { blood, lethal, funds, won }
+      this.ledgerAt = {};  // the ledger as it stood when each label was passed (see jump)
+      this.rackAt = null;  // the level the rack prop shows (null = no prop; 'live' follows the ledger)
     }
 
     $(sel) { return this.el.querySelector(sel); }
@@ -50,6 +57,8 @@
         <div class="vn-bg"><div class="bg-layer" data-bg="black"></div><div class="rain"></div><div class="rain far"></div><div class="flash"></div></div>
         <div class="vn-chars">${SLOTS.map(s => `<div class="vn-char at-${s}" data-slot="${s}"></div>`).join('')}</div>
         <div class="vn-table" hidden></div>
+        <div class="vn-rack" hidden></div>
+        <div class="vn-stakes" hidden></div>
         <div class="vn-fx"></div>
         <div class="vn-box"><div class="vn-face"></div><div class="vn-name"></div><div class="vn-text"></div><div class="vn-next">▼</div></div>
         <div class="vn-card" hidden></div>
@@ -145,6 +154,11 @@
     jump(label) {
       if (!(label in this.labels)) throw new Error('unknown label: ' + label);
       this.i = this.labels[label];
+      // going back to a moment the story has passed puts the ledger back as it stood there
+      if (label in this.ledgerAt) {
+        this.stakes = this.ledgerAt[label] ? Object.assign({}, this.ledgerAt[label]) : null;
+        if (this.el) this.renderStakes();
+      }
     }
 
     /* ---------------------------------------------------------------- */
@@ -178,6 +192,7 @@
 
     async exec(cmd) {
       if (cmd.goto) { this.jump(cmd.goto); return; }
+      if (cmd.label) this.ledgerAt[cmd.label] = this.stakes ? Object.assign({}, this.stakes) : null;
       if (cmd.bg) await this.setBg(cmd.bg);
       if (cmd.hide) this.hideChar(cmd.hide);
       if (cmd.show) {
@@ -187,6 +202,13 @@
       if (cmd.fx) await this.fx(cmd.fx);
       if (cmd.card) await this.card(cmd);
       if (cmd.table !== undefined) await this.setTable(cmd.table, cmd);
+      if (cmd.stakes !== undefined) await this.setStakes(cmd);
+      if (cmd.rack !== undefined) this.setRack(cmd.rack);
+      if (cmd.focus !== undefined) this.setFocus(cmd.focus);
+      if (cmd.move) await this.moves(cmd.move);
+      if (cmd.bleed) await this.bleed(cmd.bleed);
+      if (cmd.transfuse) await this.transfuse(cmd);
+      if (cmd.pay) await this.pay(cmd.pay);
       if (cmd.text != null) await this.line(cmd);
       if (cmd.choice) await this.choose(cmd.choice);
       if (cmd.decide) await this.decide(cmd.decide);
@@ -215,11 +237,167 @@
         return;
       }
       Analysis.viewOfTable(table);       // throws on an impossible table (five copies of a tile)
-      this.table = table;
-      box.innerHTML = TableBoard.html(table, { win: cmd.won });
+      this.table = JSON.parse(JSON.stringify(table));     // a copy: the moves played on it must not change the script
+      this.tableWon = cmd.won || null;
+      box.innerHTML = TableBoard.html(this.table, { win: cmd.won });
       box.hidden = false;
       this.el.classList.add('has-table');
       await this.pause(260);
+    }
+
+    redrawTable() {
+      if (this.table) this.$('.vn-table').innerHTML = TableBoard.html(this.table, { win: this.tableWon });
+    }
+
+    /** light up the tiles a line talks about: { seat, hand: '7s8s', river: '4m' } (or several); false clears */
+    setFocus(f) {
+      if (!this.table) return;
+      this.table.focus = f ? [].concat(f) : null;
+      this.redrawTable();
+    }
+
+    /** play moves on the table, one after another (js/story/storystate.js, TableMoves); { wait: ms } pauses */
+    async moves(list) {
+      const HOLD = { draw: 260, discard: 430, riichi: 700, pon: 560, chi: 560, kan: 620, dora: 620, ron: 760, tsumo: 760, reveal: 500 };
+      for (const m of [].concat(list)) {
+        if (this.dead || !this.table) return;
+        if (m.wait) { await this.pause(m.wait); continue; }
+        const r = TableMoves.apply(this.table, m);
+        this.table.focus = m.focus ? [].concat(m.focus) : null;
+        this.redrawTable();
+        if (r.kind === 'discard' || r.kind === 'dora') Sfx.tile();
+        else if (r.kind === 'riichi') Sfx.riichi();
+        else if (r.kind === 'pon' || r.kind === 'chi' || r.kind === 'kan') Sfx.call();
+        else if (r.kind === 'ron' || r.kind === 'tsumo') Sfx.win();
+        await this.pause(HOLD[r.kind] || 300);
+      }
+    }
+
+    /* ---- Washizu mahjong: the ledger, the rack ---------------------- */
+
+    renderStakes() {
+      const box = this.$('.vn-stakes');
+      const s = this.stakes;
+      if (!s) { box.hidden = true; box.innerHTML = ''; this.el.classList.remove('has-stakes'); return; }
+      const name = id => { const c = Characters[id]; return c ? `<b class="vs-name" style="color:${c.color}">${esc(I18n.pick(c.name))}</b>` : ''; };
+      box.hidden = false;
+      this.el.classList.add('has-stakes');
+      box.innerHTML =
+        `<div class="vs vs-blood">${name(s.bleeder || 'akagi19')}${BloodRack.html(s.blood, s.lethal, 'mini')}` +
+        `<span data-vs="blood">${esc(I18n.t('hud.blood', { drawn: Math.round(s.blood), left: Math.round(Stakes.left(s)) }))}</span>` +
+        `<span class="vs-won" data-vs="won">${esc(I18n.t('hud.won', { n: I18n.yen(s.won) }))}</span></div>` +
+        `<div class="vs vs-money">${name(s.payer || 'washizu')}<span class="vs-funds" data-vs="funds">${esc(I18n.t('hud.funds', { n: I18n.yen(s.funds) }))}</span></div>`;
+      box.classList.toggle('near', s.blood >= BloodRack.DANGER);
+      if (this.rackAt === 'live') this.drawRack(s.blood);
+    }
+
+    /** count the ledger on screen from one state to another */
+    tweenStakes(from, to, ms) {
+      const box = this.$('.vn-stakes');
+      if (this.skip) ms = 0;
+      return new Promise(resolve => {
+        const t0 = performance.now();
+        const mix = (a, b, k) => a + (b - a) * k;
+        const step = now => {
+          if (this.dead) return resolve();
+          const k = ms <= 0 ? 1 : Math.min(1, (now - t0) / ms);
+          this.stakes = Object.assign({}, to, { blood: mix(from.blood, to.blood, k), funds: mix(from.funds, to.funds, k), won: mix(from.won, to.won, k) });
+          this.renderStakes();
+          if (k < 1) requestAnimationFrame(step);
+          else { this.stakes = to; this.renderStakes(); resolve(); }
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
+    flashStakes(part) {
+      const el = this.$('.vn-stakes [data-vs="' + part + '"]');
+      if (!el) return;
+      el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    }
+
+    /** { stakes: {...} } sets the ledger (tween: true counts up to it); { stakes: false } puts it away */
+    async setStakes(cmd) {
+      const from = this.stakes;
+      const to = Stakes.apply(from, { stakes: cmd.stakes });
+      if (cmd.tween && from && to) {
+        if (to.funds !== from.funds) Sfx.coin();
+        await this.tweenStakes(from, to, 1100);
+        if (to.funds !== from.funds) { this.flashStakes('funds'); this.flashStakes('won'); }
+      } else {
+        this.stakes = to;
+        this.renderStakes();
+      }
+    }
+
+    /** blood is drawn: the rack fills over the scene, then the ledger shows the new total */
+    async bleed(cc) {
+      if (!this.stakes) return;
+      const from = this.stakes.blood;
+      const to = Stakes.apply(this.stakes, { bleed: cc });
+      this.shake();
+      await BloodRack.sequence(this.el, { from, to: to.blood, lethal: to.lethal, fast: this.skip });
+      if (this.dead) return;
+      this.stakes = to;
+      this.renderStakes();
+      this.flashStakes('blood');
+    }
+
+    /** blood bought back with the winnings */
+    async transfuse(cmd) {
+      if (!this.stakes) return;
+      const from = this.stakes;
+      const to = Stakes.apply(from, { transfuse: cmd.transfuse, cost: cmd.cost });
+      await BloodRack.sequence(this.el, { from: from.blood, to: to.blood, lethal: to.lethal, fast: this.skip });
+      if (this.dead) return;
+      this.stakes = to;
+      this.renderStakes();
+      this.flashStakes('blood'); this.flashStakes('won');
+    }
+
+    /** Washizu pays: his funds run down, Akagi's winnings up */
+    async pay(yen) {
+      if (!this.stakes) return;
+      const from = this.stakes;
+      const to = Stakes.apply(from, { pay: yen });
+      Sfx.coin();
+      await this.tweenStakes(from, to, 900);
+      this.flashStakes('funds'); this.flashStakes('won');
+      await this.pause(250);
+    }
+
+    drawRack(level) {
+      const box = this.$('.vn-rack');
+      const lethal = (this.stakes && this.stakes.lethal) || 2000;
+      if (!box.firstChild) {
+        box.innerHTML = `${BloodRack.html(0, lethal, 'big')}<div class="vr-count"><b>0</b><span> / ${lethal}cc</span></div>`;
+        this.rackShown = 0;
+      }
+      const rack = box.querySelector('.rack'), num = box.querySelector('.vr-count b');
+      const from = this.rackShown || 0;
+      this.rackShown = level;
+      BloodRack.tween(rack, from, level, this.skip || from === level ? 0 : Math.min(2600, 500 + Math.abs(level - from) * 2.2), v => {
+        num.textContent = Math.round(v);
+        box.classList.toggle('near', v >= BloodRack.DANGER);
+      });
+    }
+
+    /**
+     * The rack as a prop in the scene: a number fills it to that level (to show what the rules mean),
+     * true makes it follow the ledger - the blood really drawn - and false takes it away.
+     */
+    setRack(v) {
+      const box = this.$('.vn-rack');
+      if (v === false || v == null) {
+        box.hidden = true; box.innerHTML = '';
+        this.rackAt = null; this.rackShown = 0;
+        this.el.classList.remove('has-rack');
+        return;
+      }
+      box.hidden = false;
+      this.el.classList.add('has-rack');
+      this.rackAt = v === true ? 'live' : v;
+      this.drawRack(v === true ? ((this.stakes && this.stakes.blood) || 0) : v);
     }
 
     /**
@@ -251,6 +429,7 @@
       const code = Tiles.code(t);
       const opt = d.options.find(o => o.tiles === code) || d.options.find(o => o.tiles === '*');
       if (d.flag) this.flags[d.flag] = opt.id;
+      if (d.apply) await this.moves({ seat: table.me || 0, discard: code });     // the tile goes to the pond
       this.log.push({ name: '', color: '', text: '▸ ' + I18n.t('an.discard', { tile: I18n.tileName(t) }), choice: true });
       if (opt.goto) this.jump(opt.goto);
     }
@@ -402,7 +581,7 @@
       // with a table laid out the portraits are hidden, so the speaker's face goes in the box
       const faceEl = this.$('.vn-face');
       const face = cmd.who ? (cmd.face || this.faces[cmd.who]) : null;
-      faceEl.innerHTML = this.table && cmd.who ? Portraits.avatar(cmd.who + (face ? ':' + face : '')) : '';
+      faceEl.innerHTML = (this.table || this.rackAt != null) && cmd.who ? Portraits.avatar(cmd.who + (face ? ':' + face : '')) : '';
       if (cmd.who && face) this.faces[cmd.who] = face;
       this.setSpeaker(cmd.who || null);
       this.log.push({ name: whoName, color: who ? who.color : '', text, think: !!cmd.think, who: cmd.who || null, raw: text });
@@ -503,6 +682,11 @@
       if (this.dead) return new Promise(() => {});
       this.paused = false;
       this.flags.opening = (res && res.opening) || null;    // what the player did at the opening decision
+      // a cleared match of Washizu mahjong leaves its blood and money on the story's ledger
+      if (res && res.cleared && this.stakes) {
+        this.stakes = Stakes.afterBattle(this.stakes, Stages.get(cmd.battle), res.final);
+        this.renderStakes();
+      }
       this.jump(res && res.cleared ? cmd.win : cmd.lose);
     }
 

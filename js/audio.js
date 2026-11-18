@@ -80,6 +80,16 @@
     win() { [392, 523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, 0.5, 0.12, 'triangle'), i * 90)); },
     lose() { [330, 262, 196].forEach((f, i) => setTimeout(() => tone(f, 0.6, 0.12, 'sine'), i * 160)); },
     click() { tone(880, 0.04, 0.05, 'sine'); },
+    // the blood-drawing scene: a two-stroke heartbeat (louder as `near` goes to 1), a drop, the flat line
+    heartbeat(near) {
+      const g = 0.16 + 0.14 * Math.max(0, Math.min(1, near || 0));
+      tone(58, 0.16, g, 'sine'); noise(0.08, 70, 0.7, g * 0.9, 'lowpass');
+      setTimeout(() => { tone(46, 0.2, g * 0.8, 'sine'); noise(0.1, 55, 0.7, g * 0.7, 'lowpass'); }, 150);
+    },
+    drip() { tone(1250, 0.05, 0.035, 'sine'); tone(620, 0.09, 0.03, 'sine'); },
+    flatline() { tone(990, 2.2, 0.07, 'sine'); },
+    // money changing hands
+    coin() { tone(1568, 0.07, 0.05, 'triangle'); setTimeout(() => tone(2093, 0.12, 0.045, 'triangle'), 60); },
     text() { /* reserved for a typewriter tick */ },
 
     thunder() {
