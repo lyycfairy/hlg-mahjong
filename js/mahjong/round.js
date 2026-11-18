@@ -41,6 +41,9 @@
       this.setup = opts.setup || null;        // optional mid-hand starting position
       this.skills = opts.skills || null;      // optional SkillBoard
       this.last = !!opts.last;                // final scheduled hand of the match (the AI plays for placement)
+      // stop the hand after `seat` has made `discards` discards in it - a story scene takes over
+      this.pauseAfter = opts.pauseAfter || null;
+      this.exposed = null;                    // set by the 'notice' skill: the hand is voided
 
       this.players = [0, 1, 2, 3].map(seat => ({
         seat,
@@ -316,6 +319,7 @@
         };
 
         if (this.skills) await this.skills.turnStart(this, seat, turnOpts);
+        if (this.exposed) return this.expose();
         const action = await this.agents[seat].onTurn(this, seat, turnOpts);
 
         if (action.type === 'tsumo') {
@@ -354,6 +358,7 @@
         p.discardedTypes.add(typeOf(tile));
         p.safe.add(typeOf(tile));
         await this.emit({ type: 'discard', seat, tile, riichi: declaring, tsumogiri });
+        if (this.pauseAfter && seat === this.pauseAfter.seat && --this.pauseAfter.discards <= 0) return this.pause(seat);
 
         /* ---- reactions ---- */
         const order = [1, 2, 3].map(i => (seat + i) % 4);
@@ -470,6 +475,28 @@
       return this.result;
     }
 
+    /** the hand stops where it stands (opts.pauseAfter): what is `seat` now waiting for, and for how much? */
+    async pause(seat) {
+      const waits = this.waitsOf(seat);
+      let yakuman = 0, han = 0;
+      for (const w of waits) {
+        const res = Yaku.evaluate(this.winContext(seat, w, false));
+        if (res && (res.yakuman > yakuman || (!yakuman && res.han > han))) { yakuman = res.yakuman || 0; han = res.han || 0; }
+      }
+      this.finished = true;
+      this.result = { type: 'pause', seat, waits, yakuman, han, hand: this.players[seat].hand.slice(), deltas: [0, 0, 0, 0] };
+      await this.emit({ type: 'pause', result: this.result });
+      return this.result;
+    }
+
+    /** a 'notice' skill saw through a cheat: the hand is voided, nobody pays */
+    async expose() {
+      this.finished = true;
+      this.result = { type: 'exposed', by: this.exposed.by, target: this.exposed.target, deltas: [0, 0, 0, 0] };
+      await this.emit({ type: 'exposed', result: this.result });
+      return this.result;
+    }
+
     async exhaustiveDraw() {
       const tenpai = [];
       for (let s = 0; s < 4; s++) if (this.waitsOf(s).length > 0) tenpai.push(s);
@@ -496,7 +523,7 @@
   class Match {
     /**
      * opts: { agents, scores, firstDealer, startWind, startKyoku, endWind, rng, onEvent,
-     *         setup, skills, maxHands }
+     *         setup, skills, maxHands, pauseAfter }
      * The match ends after the last hand of `endWind`, when someone goes below zero, or after
      * `maxHands` hands. The final result lists every hand's result in `results`.
      * `setup` (an object, or a function of the dealer seat returning one) applies to
@@ -519,6 +546,7 @@
       this.setup = opts.setup || null;
       this.skills = opts.skills || null;
       this.results = [];
+      this.pauseAfter = opts.pauseAfter || null;   // first hand only, like setup
     }
 
     standings() {
@@ -541,6 +569,7 @@
           scores: this.scores, agents: this.agents, rng: this.rng,
           onEvent: this.onEvent,
           setup, skills: this.skills,
+          pauseAfter: this.handsPlayed === 0 && this.pauseAfter ? Object.assign({}, this.pauseAfter) : null,
           last: this.wind === this.endWind && this.kyoku === 3,
         });
         this.round = round;

@@ -66,6 +66,7 @@
         startKyoku: st.startKyoku || 0,
         endWind: st.endWind,
         maxHands: st.hands || undefined,
+        pauseAfter: st.pause || null,
         skills: this.board,
         setup: this.opening ? dealer => Scenario.build(Object.assign({ dealer }, this.opening.scenario)) : null,
         onEvent: (e, r) => this.onEvent(e, r),
@@ -494,6 +495,22 @@
       return { type: key === 'ron' ? 'ron' : 'pass' };
     }
 
+    /** the match opens on a plain choice from the story - no hand to weigh, only the moment */
+    async openingChoice() {
+      const op = this.opening;
+      this.render();
+      await this.scene(op.intro);
+      const key = await this.decide({
+        kind: 'choice', title: P(op.title), situation: op.situation ? `<p>${esc(P(op.situation))}</p>` : '',
+        choices: op.options.map(o => ({
+          key: o.id, label: P(o.label), sub: o.sub ? P(o.sub) : '',
+          html: o.desc ? `<p>${esc(P(o.desc))}</p>` : '', speech: [],
+        })),
+        notes: k => (op.options.find(o => o.id === k) || {}).note,
+      });
+      await this.resolveOpening(op.options.find(o => o.id === key));
+    }
+
     /** the match opens on a discard that matters: which tile? */
     async openingDiscard(round) {
       const op = this.opening;
@@ -522,9 +539,11 @@
     }
 
     /** consequences of the opening: change the board, then tell the player what changed */
-    applyEffects(effects) {
-      if (!effects || !effects.length) return Promise.resolve();
-      const notices = Skills.applyEffects(this.board, effects);
+    async applyEffects(effects) {
+      if (!effects || !effects.length) return;
+      // { fire: { seat } }: that seat's skill goes off now (its cut-in plays through the engine event)
+      for (const e of effects) if (e.fire) await this.board.activate(this.round, e.fire.seat);
+      const notices = Skills.applyEffects(this.board, effects.filter(e => !e.fire));
       this.render();
       return this.scene(notices.map(n => ({
         note: T('note.' + n.type, {
@@ -580,6 +599,7 @@
           if (this.openingStage === 'pending' && !this._preluded) {
             this._preluded = true;
             await this.scene(this.opening.prelude);
+            if (this.opening.kind === 'choice') await this.openingChoice(round);
           }
           break;
         }
@@ -619,6 +639,8 @@
           await this.wait(320);
           break;
         case 'exhaustive':
+        case 'pause':
+        case 'exposed':
           this.render();
           await this.wait(500);
           break;
@@ -885,10 +907,17 @@
 
     showIntro() {
       const st = this.stage;
+      // what a seat's skill does (a watching Insight says whom it watches)
+      const skillDesc = s => {
+        const k = this.board.skillOf(s), w = this.board.watchOf(s);
+        return w != null ? T('skill.insight.watch', { target: this.name(w) }) : T('skill.' + k + '.desc');
+      };
       const skillCell = s => {
         const k = this.board.skillOf(s);
-        return k ? `<span class="gauge-icon skill-${k}"></span>${esc(T('skill.' + k))}` : '';
+        return k ? `<span title="${esc(skillDesc(s))}"><span class="gauge-icon skill-${k}"></span>${esc(T('skill.' + k))}</span>` : '';
       };
+      const foeSkills = [1, 2, 3].filter(s => this.board.skillOf(s)).map(s => `<li><span class="gauge-icon skill-${this.board.skillOf(s)}"></span>` +
+        T('intro.foeSkill', { skill: esc(T('skill.' + this.board.skillOf(s))), name: esc(this.name(s)), desc: esc(skillDesc(s)) }) + '</li>').join('');
       const rows = st.names.map((n, s) => {
         const style = st.ai[s] && st.ai[s].style;
         const role = s === 0 ? `<span class="you-mark">${esc(T('you'))}</span>`
@@ -909,6 +938,7 @@
           <table class="score-table intro-table"><caption>${esc(T('intro.start', { round: roundName }))}</caption>${rows}</table>
           <ul class="role-list">${roles}</ul>
           ${mine ? `<p class="small">${T(Skills.DEFS[mine] && Skills.DEFS[mine].cost ? 'intro.skillCost' : 'intro.skill', { skill: esc(T('skill.' + mine)), desc: esc(T('skill.' + mine + '.desc')) })}</p>` : ''}
+          ${foeSkills ? `<ul class="role-list skill-list">${foeSkills}</ul>` : ''}
           ${st.opening ? `<p class="small opening-note">${esc(T(st.opening.auto || st.opening.kind === 'scene' ? 'intro.openingScene' : 'intro.opening'))}</p>` : ''}
           <button class="btn btn-primary" data-ov="go">${esc(T('intro.go'))}</button>
         </div>`);
@@ -949,6 +979,29 @@
             <ul class="yaku-list">${yaku}</ul>
             <div class="result-total"><span>${esc(total)}</span><b>${fmt(res.pay.total)}</b></div>
             <div class="pay-text">${esc(payText)}</div>
+            <table class="score-table">${scoreRows}</table>
+            <button class="btn btn-primary" data-ov="next">${nextLabel}</button>
+          </div>`);
+      }
+
+      if (res.type === 'pause' || res.type === 'exposed') {
+        let body;
+        if (res.type === 'pause') {
+          const p = r.players[res.seat];
+          const value = res.yakuman ? (res.yakuman > 1 ? T('limit.multi', { n: res.yakuman }) : T('limit.yakuman'))
+            : res.han ? T('res.han', { n: res.han }) : '';
+          body = `<div class="result-hand">${p.hand.map(id => TileView.html(id, 'rs')).join('')}</div>` +
+            (res.waits.length
+              ? `<p class="small">${esc(T('res.pauseWaits', { name: this.name(res.seat) }))} ${res.waits.map(t => TileView.type(t, 'xs')).join('')}${value ? ' · <b>' + esc(value) + '</b>' : ''}</p>`
+              : `<p class="small">${esc(T('res.pauseNoten', { name: this.name(res.seat) }))}</p>`);
+        } else {
+          body = `<p class="small">${esc(T('res.exposedText', { name: this.name(res.by), target: this.name(res.target) }))}</p>`;
+        }
+        return this.overlay(`
+          <div class="card result-card">
+            <div class="card-kicker">${kicker}</div>
+            <h2>${esc(T(res.type === 'pause' ? 'res.pause' : 'res.exposed'))}</h2>
+            ${body}
             <table class="score-table">${scoreRows}</table>
             <button class="btn btn-primary" data-ov="next">${nextLabel}</button>
           </div>`);

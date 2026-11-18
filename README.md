@@ -23,14 +23,26 @@ playable but cramped. New to riichi mahjong? The title screen has a five-minute 
 ## What is in it
 
 - **Story Mode** — Chapter 1, *The Stormy Night*: a man gambling his life in a back-room game, and the
-  boy who walks in from the rain. Chapter 2, *Sleight of Hand* (掉包): the police at the door, and a hand built
-  out of the discards under a detective's nose — **in Chinese only for now**; the other languages follow once
-  the chapter is final.
-- **Battle Mode** — three stages, *The Stormy Night*, *Sleight of Hand* (Chinese for now) and *The
-  Substitute*. Clearing a stage unlocks the next.
-- **Sleight of Hand** — in Chapter 2's single hand, Akagi may swap any tile in his hand for any tile lying
-  in a pond, four times on a full gauge. The goal is a triple yakuman: Big Three Dragons plus Four
-  Concealed Triplets on a single wait.
+  boy who walks in from the rain. Chapter 2, **瞒天过海** ("deceive the heavens to cross the sea"): Akagi's
+  first hanchan, the police at the door, and a hand built out of the discards while every eye is on the
+  doorway. Chapter 3, **借刀杀人** ("kill with a borrowed knife"): the alibi, the restart, and the triple yakuman
+  with a detective at the table to witness it. The chapter titles from here on are taken from the Thirty-Six
+  Stratagems. Chapters 2 and 3 follow the first episode of the anime and are **in Chinese only for now**; the
+  other languages follow once they are final.
+- **Battle Mode** — four stages: *The Stormy Night*, 瞒天过海 and 借刀杀人 (Chinese for now), and *The
+  Substitute* (李代桃僵 in Chinese). Clearing a stage unlocks the next.
+- **Skills** — in Chinese every skill is named with a four-character idiom, and the briefing before a match
+  explains each skill at the table:
+  - **洞若观火** (*Insight*, "to see as clearly as watching a fire") — see through every hand at the table;
+    Ryuzaki's watches Akagi and stops him feeding Akagi a winning tile.
+  - **时来运转** (*The Flow*, "when the time comes, luck turns") — the next three draws are the best tiles left.
+  - **移花接木** (*Sleight of Hand*, "graft one tree's blossom onto another") — Chapter 2: swap any tile in
+    hand for any tile in a pond, four times on a full gauge, to make Big Three Dragons plus Four Concealed
+    Triplets on a single wait before the police walk in.
+  - **浑水摸鱼** (*In the Confusion*, "fish in troubled waters") — Chapter 3: restart while minds are elsewhere,
+    and every opponent stops thinking until Akagi's next turn.
+  - **明察秋毫** (*Second Look*, "see even the tip of an autumn hair") — the thug's, in Chapter 3: one more look
+    at the ponds and the swap is seen.
 - **Decision scenes** — when the story reaches a discard that matters, the table is laid out with the real
   hand, and every tile shows where it leads: ready or not, the waits and how many are left, what the hand
   pays, and how dangerous the tile is. A commentary goes with it in text and, if your browser has a voice
@@ -97,8 +109,9 @@ Only the files needed to play:
 **▶ 在线游玩：<https://lyycfairy.github.io/hlg-mahjong/>**
 
 - **离线游玩**——下载本仓库（*Code → Download ZIP*），解压后用浏览器打开 `index.html` 即可，无需安装，也不需要联网。
-- **内容**——故事模式第一章《暴风雨之夜》、第二章《掉包》（刑警闯进麻将馆的那一刻，赤木从牌河里掉包，做成大三元＋四暗刻单骑的三倍役满；
-  第二章目前只有中文）；对战模式三关（过一关开启下一关；第二关的技能“掉包”可以把手牌和任意牌河里的牌互换）；抉择场景会摆出真实手牌，并分析每一张牌的
+- **内容**——故事模式第一章《暴风雨之夜》、第二章《瞒天过海》（警察找上门、所有人望向门口的那一刻，赤木从牌河里掉包，做成大三元＋四暗刻单骑的听牌）、
+  第三章《借刀杀人》（不在场证明、浑水摸鱼重开牌局、龙崎打出的西风——三倍役满）；第二、三章根据动画第一集改编，目前只有中文。对战模式四关（过一关开启下一关）；
+  技能均以四字成语命名，对局前的介绍会逐一解释：洞若观火、时来运转、移花接木、浑水摸鱼、明察秋毫；抉择场景会摆出真实手牌，并分析每一张牌的
   走向（是否听牌、听哪些牌、打点、危险度），配有文字和语音解说；每场对局都从故事中的一个场景开始（第一关里赤木照原作那样，
   拿下第一张便宜的和牌；第二关由你抉择）；技能与怒气槽——第一关赤木没有技能，而龙崎在第一局后学会“洞察”：
   怒气槽蓄满时只要赤木听牌就会自动发动，那一局里他绝不会打出赤木所听的牌；三种类型的对手（进攻型、协作型、独立型）；所有角色台词均有中、日、英三语配音，每个角色的声音按年龄和性格挑选。
@@ -118,8 +131,8 @@ Only the files needed to play:
 
 - **オフラインで遊ぶ**——このリポジトリをダウンロード（*Code → Download ZIP*）して展開し、`index.html` をブラウザで
   開いてください。インストールもネット接続も不要です。
-- **内容**——ストーリーモード第一章「嵐の夜」、第二章「すり替え」（現在は中国語版のみ。刑事の前で河の牌をすり替え、
-  大三元・四暗刻単騎のトリプル役満を作る）。対局モードは三ステージ（クリアすると次が開きます）。決断の場面では
+- **内容**——ストーリーモード第一章「嵐の夜」、第二章「瞞天過海」、第三章「借刀殺人」（第二・三章はアニメ第一話にもとづき、現在は中国語版のみ。
+  刑事の来訪に乗じて河の牌をすり替え、大三元・四暗刻単騎のトリプル役満を作る）。対局モードは四ステージ（クリアすると次が開きます）。決断の場面では
   実際の手牌が卓に並び、どの牌を切るとどうなるか（テンパイかどうか、待ち、打点、危険度）が文字と音声の解説つきで
   示されます。各対局は物語の一場面から始まります（第一ステージではアカギが原作どおり
   最初の安い当たり牌でアガり、第二ステージは自分で決断します）。スキルと怒気ゲージ——第一ステージのアカギはスキルを持たず、

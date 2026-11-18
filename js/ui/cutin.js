@@ -12,7 +12,7 @@
   'use strict';
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const ART = { insight: 'fx/insight.jpg', flow: 'fx/flow.jpg', sleight: 'fx/sleight.jpg' };
+  const ART = { insight: 'fx/insight.jpg', flow: 'fx/flow.jpg', sleight: 'fx/sleight.jpg', confusion: 'fx/confusion.jpg', notice: 'fx/notice.jpg' };
 
   const CutIn = {
     play(host, o) {

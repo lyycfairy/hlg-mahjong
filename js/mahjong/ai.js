@@ -160,10 +160,12 @@
     const view = Analysis.viewOfRound(round, seat);
     const board = round.skills || null;
     const reads = board ? board.reads(round, seat) : [];
+    const dazed = !!(board && board.dazed && board.dazed(seat));     // a confusion: thinking has stopped
     let unseenTotal = 0;
     for (const u of view.unseen) unseenTotal += Math.max(0, u);
     const threats = [];
     for (const th of view.threats) {
+      if (dazed) break;                                                 // ... so nobody looks dangerous
       if (P.style === 'collaborator' && th.seat === P.ally) continue;   // the ally is never a threat
       const q = round.players[th.seat];
       const t = { seat: th.seat, safe: th.safe, tenpai: th.tenpai, loss: th.loss, riichi: th.riichi, exact: null, weight: 1 };

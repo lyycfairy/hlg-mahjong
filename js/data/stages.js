@@ -36,7 +36,11 @@
  *   langs        the languages a stage has been written in, when not all three (others show it in Chinese)
  *
  * The opening `kind` may also be 'scene': no decision - the prelude plays when the hand appears,
- * the intro when the player's first turn comes, and then the hand is played normally.
+ * the intro when the player's first turn comes, and then the hand is played normally - or 'choice':
+ * a plain decision from the story (options [{ id, label, desc, note, effects }]) shown before anyone
+ * moves. An effect { fire: { seat } } sets that seat's skill off at once.
+ *   pause        { seat, discards }: the hand stops once that seat has made that many discards (a scene
+ *                takes over); the result is { type: 'pause', waits, yakuman } for goal.check
  *
  * Text is written as L(english, japanese, chinese), or Z(chinese) while a stage exists only in
  * Chinese. All of it is original to this project.
@@ -162,9 +166,9 @@
       id: 'swap',
       no: 2,
       langs: ['zh'],
-      title: Z('掉包'),
-      opponent: Z('龙崎和他的手下——门口站着刑警'),
-      blurb: Z('第二场，南二局。刑警闯进了麻将馆，所有人的目光都转向了门口。只有赤木，低头看着牌河。'),
+      title: Z('瞒天过海'),
+      opponent: Z('龙崎和他的手下——门外来了警察'),
+      blurb: Z('赤木的第一个半庄，南二局。手里三副三元牌对子，别人打出的三元牌他一张也没碰。就在这时，警察找上了门。'),
       names: [N.akagi, N.ryuzaki, N.thug, N.lackey],
       who: ['akagi', 'ryuzaki', 'thug', 'lackey'],
       portraits: ['akagi', 'ryuzaki', 'thug', 'thug:angry'],
@@ -174,47 +178,121 @@
         { style: 'collaborator', level: 0.8, ally: 1, signal: 0.8 },
         { style: 'independent', level: 0.7 },
       ],
-      // the police are in the doorway: for this one hand nobody is watching the tiles
+      // everyone is looking at the door: for this one turn nobody is watching the tiles
       skills: [{ skill: 'sleight', gauge: 100 }, null, null, null],
       hands: 1,
+      pause: { seat: 0, discards: 1 },       // the police come in once he has thrown this tile
       opening: {
         kind: 'scene',
         scenario: {
-          // Akagi sits on seven pairs, ready on 9s, with a pair of each dragon - and he let every
-          // dragon that was thrown go by. One of each is in the ponds, and so are a 4s and a 7p.
-          turn: 0, n: 7, dora: '2m',
-          hands: { 0: '33m77p449s556677z' },
-          rivers: { 0: '1z9m4z2p8m1s3z' },
-          discarded: { 1: '5z', 2: '6z4s', 3: '7z7p' },
-          draws: ['1p', '9s'],      // his own draw, then the 9s that Ryuzaki draws and throws
-          avoid: '9s',
+          // the anime's hand: three dragon pairs, 8p, 2m, 3m and a single West - seven pairs, ready
+          // on West. He let the red, the green and the white dragon go by; so are an 8p.
+          turn: 0, n: 7, dora: '1p',
+          hands: { 0: '2233m88p3556677z' },
+          rivers: { 0: '1m9p4z2s1s9m8s' },
+          discarded: { 1: '7z8p', 2: '6z', 3: '5z' },
+          draws: ['9s'],
+          avoid: '3z',
         },
-        forced: [{ seat: 1, discard: 'drawn' }],
         prelude: [
-          { text: Z('第二场，南二局。门口站着刑警。') },
-          { text: Z('谁都不敢出声——在这里赌钱是犯法的。所有人的目光，都钉在门口那个男人身上。') },
+          { text: Z('南二局。门外忽然有人自称是警察——牌桌边的每一个人，都转过头去望着门口。') },
           { who: 'akagi', emo: 'cold', face: 'calm', think: true, text: Z('白板、发财、红中……手里各有一对，牌河里也各躺着一张。') },
         ],
         intro: [
           { who: 'akagi', emo: 'smirk', face: 'smirk', think: true, text: Z('现在，没有人在看牌。') },
-          { note: Z('【掉包】轮到你时，可以把手里的任意一张牌，与任意一家牌河里的一张牌互换。每换一次消耗25点怒气——现在可以换四次。本局目标：以三倍役满和牌（大三元＋四暗刻单骑）。') },
+          { note: Z('【移花接木】轮到你时，可以把手里的任意一张牌，与任意一家牌河里的一张牌互换。每换一次消耗四分之一的怒气——现在可以换四次。警察随时会进门：打出这一张牌之前，做成三倍役满的听牌（大三元＋四暗刻单骑）。') },
         ],
       },
-      scores: [26000, 30000, 23000, 21000],
-      firstDealer: 2,
+      scores: [17800, 30200, 27000, 25000],    // the East round cost him 7,200
+      firstDealer: 1,
       startWind: 1,
       startKyoku: 1,
       endWind: 1,
       goal: {
-        text: Z('以三倍役满和牌：大三元＋四暗刻单骑。'),
+        text: Z('警察进门之前，用移花接木做成三倍役满的听牌：大三元＋四暗刻单骑。'),
+        check: final => (final.results || []).some(r => r.type === 'pause' && r.seat === 0 && r.yakuman >= 3),
+      },
+      available: true,
+    },
+    {
+      id: 'witness',
+      no: 3,
+      langs: ['zh'],
+      title: Z('借刀杀人'),
+      opponent: Z('龙崎和他的手下——刑警坐在一旁'),
+      blurb: Z('不在场证明蒙混过关，牌局重新开始。牌河里少了那么多牌，只要有人稍一留神……'),
+      names: [N.akagi, N.ryuzaki, N.thug, N.lackey],
+      who: ['akagi', 'ryuzaki', 'thug', 'lackey'],
+      portraits: ['akagi', 'ryuzaki', 'thug', 'thug:angry'],
+      ai: [
+        null,
+        { style: 'aggressor', level: 1 },
+        { style: 'collaborator', level: 0.8, ally: 1, signal: 0.8 },
+        { style: 'independent', level: 0.7 },
+      ],
+      // Akagi: the moment of confusion. Ryuzaki: his eye on Akagi, since chapter 1. The round-glasses
+      // man: one more look at the ponds and he will see that tiles have been switched.
+      skills: [
+        { skill: 'confusion', gauge: 100 },
+        { skill: 'insight', gauge: 80, watch: 0 },
+        { skill: 'notice', gauge: 96, watch: 0 },
+        null,
+      ],
+      hands: 1,
+      opening: {
+        kind: 'choice',
+        scenario: {
+          // the same hand after the swap: Akagi waits on West alone; the 2m and 3m he slipped into
+          // the ponds lie where the dragons and the 8p were. Ryuzaki draws 8s, which leaves his own
+          // West the one useless tile in his hand.
+          turn: 1, n: 7, dora: '1p',
+          hands: { 0: '888p3555666777z', 1: '345m456p678s23s8s3z' },
+          rivers: { 0: '1m9p4z2s1s9m8s9s', 1: '1z2m9s4s3m2z1p' },      // as the chapter 3 table shows them
+          discarded: { 2: '2m', 3: '3m' },
+          draws: ['8s'],
+          avoid: '3z',
+        },
+        title: Z('重开牌局的时机'),
+        intro: [
+          { who: 'akagi', emo: 'flat', face: 'calm', text: Z('那么，我们继续吧。') },
+          { who: 'nangou', emo: 'worried', face: 'worried', think: true, text: Z('牌河里少了那么多牌……只要谁稍微留神看一眼，马上就会露馅。') },
+        ],
+        options: [
+          {
+            id: 'now',
+            label: Z('浑水摸鱼——现在就开局'),
+            desc: Z('趁所有人的心思还在刑警身上，马上让牌局继续。'),
+            note: [
+              { who: 'nangou', emo: 'urgent', face: 'shock', think: true, text: Z('对……就是现在。大家的心思还没回到牌桌上——这是一片混乱的时刻。') },
+            ],
+            effects: [{ fire: { seat: 0 } }],
+          },
+          {
+            id: 'wait',
+            label: Z('等风头过去再说'),
+            desc: Z('先让刑警的事平息下来，再慢慢地打。'),
+            note: [
+              { who: 'nangou', emo: 'alarm', face: 'shock', think: true, text: Z('不行……等大家回过神来，谁都会发现牌河不对劲！') },
+            ],
+            effects: [{ gauge: { seat: 1, set: 100 } }],
+          },
+        ],
+      },
+      scores: [17800, 30200, 27000, 25000],
+      firstDealer: 1,
+      startWind: 1,
+      startKyoku: 1,
+      endWind: 1,
+      goal: {
+        text: Z('趁大家还没回过神来，以三倍役满和牌：大三元＋四暗刻单骑。'),
         check: final => (final.results || []).some(r => r.type === 'win' && r.winner === 0 && r.score.yakuman >= 3),
       },
       available: true,
     },
     {
       id: 'yagi',
-      no: 3,
-      title: L('The Substitute', '代打ち', '代打'),
+      no: 4,
+      title: L('The Substitute', '代打ち', '李代桃僵'),
       opponent: L('Yagi, the house professional', '代打ちの玄人・矢木', '职业代打·矢木'),
       blurb: L(
         'The yakuza send in a man who plays for a living. An East-round duel on even points.',
@@ -350,17 +428,17 @@
       available: true,
     },
     {
-      id: 'ichikawa', no: 4, available: false,
+      id: 'ichikawa', no: 5, available: false,
       title: L('The Blind Master', '盲目の達人', '盲眼高手'),
       opponent: L('Ichikawa', '市川', '市川'),
     },
     {
-      id: 'urabe', no: 5, available: false,
+      id: 'urabe', no: 6, available: false,
       title: L('The Impostor\'s Table', 'ニセモノの卓', '冒牌货的牌桌'),
       opponent: L('Urabe', '浦部', '浦部'),
     },
     {
-      id: 'washizu', no: 6, available: false,
+      id: 'washizu', no: 7, available: false,
       title: L('The Transparent Tiles', '透明な牌', '透明的牌'),
       opponent: L('Washizu', '鷲巣', '鹫巢'),
     },

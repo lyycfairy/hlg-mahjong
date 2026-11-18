@@ -14,6 +14,12 @@
  *   insight  the player sees every opponent's hand for what it is: who is
  *            ready and exactly which tiles deal in
  *   flow     the player's next three draws are the best tiles left in the wall
+ *   confusion (In the Confusion) until the owner's next turn every opponent is in a
+ *            thought-stop: none of them guards against danger, fires a skill, or
+ *            fills a gauge (board.dazed(seat))
+ *   notice   (Second Look) fires by itself once the gauge is full, unless its owner is
+ *            dazed: he notices that the ponds have been tampered with, and the hand
+ *            is voided (the round ends with { type: 'exposed' }). `watch` names the cheat.
  *   sleight  (Sleight of Hand) on his own turn the player swaps a tile in his hand
  *            for any tile lying in a pond. It does not wait for a full gauge:
  *            each swap costs DEFS.sleight.cost, so a full gauge is four swaps.
@@ -47,6 +53,8 @@
     insight: { id: 'insight' },
     flow: { id: 'flow', draws: 3 },
     sleight: { id: 'sleight', cost: 25 },
+    confusion: { id: 'confusion' },
+    notice: { id: 'notice', auto: true },
   };
 
   class SkillBoard {
@@ -66,7 +74,11 @@
       this.flowLeft = [0, 0, 0, 0];
       this.ignore = [[], [], [], []];           // seat -> targets it does not take seriously this hand
       this.swapped = [0, 0, 0, 0];              // Sleight of Hand swaps made this hand
+      this.daze = null;                          // { by: seat } while a confusion holds the others
     }
+
+    /** is `seat` in the thought-stop of somebody else's confusion? */
+    dazed(seat) { return !!this.daze && this.daze.by !== seat; }
 
     skillOf(seat) { return this.seats[seat] ? this.seats[seat].skill : null; }
     /** the player a watching Insight keeps its eye on, or null */
@@ -110,15 +122,16 @@
       round.skills = this;
     }
 
-    /** charge gauges from engine events */
+    /** charge gauges from engine events (a dazed player's gauge stands still) */
     onEvent(evt) {
+      const add = (seat, n) => { if (!this.dazed(seat)) this.add(seat, n); };
       switch (evt.type) {
-        case 'draw': this.add(evt.seat, GAIN.draw); break;
-        case 'call': this.add(evt.seat, GAIN.call); break;
-        case 'riichi': this.add(evt.seat, GAIN.riichi); break;
+        case 'draw': add(evt.seat, GAIN.draw); break;
+        case 'call': add(evt.seat, GAIN.call); break;
+        case 'riichi': add(evt.seat, GAIN.riichi); break;
         case 'win':
-          this.add(evt.result.winner, GAIN.win);
-          if (evt.result.loser != null) this.add(evt.result.loser, GAIN.dealIn);
+          add(evt.result.winner, GAIN.win);
+          if (evt.result.loser != null) add(evt.result.loser, GAIN.dealIn);
           break;
       }
     }
@@ -132,6 +145,12 @@
 
     /** called by the round before a player acts: computer players fire their skill here */
     async turnStart(round, seat, opts) {
+      if (this.daze && this.daze.by === seat) this.daze = null;     // his own turn: everyone comes to
+      if (this.dazed(seat)) { opts.guard = []; return; }            // thinking has stopped: no skill, no guard
+      if (this.skillOf(seat) === 'notice') {
+        if (this.ready(seat)) await this.activate(round, seat);
+        return;
+      }
       if (this.watchOf(seat) != null) {
         // a watching Insight is not the owner's to time: it fires when the watched player is ready
         if (this.ready(seat) && round.waitsOf(this.watchOf(seat)).length) await this.activate(round, seat);
@@ -170,7 +189,10 @@
       this.active[seat] = skill;
       this.used[seat]++;
       if (skill === 'flow') this.flowLeft[seat] = DEFS.flow.draws;
+      if (skill === 'confusion') this.daze = { by: seat };
       await round.emit({ type: 'skill', seat, skill });
+      // the round sees this after the turn's skills and ends the hand (Round.play)
+      if (skill === 'notice') round.exposed = { by: seat, target: this.seats[seat].watch };
       return true;
     }
 

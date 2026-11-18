@@ -23,6 +23,9 @@ window.AssetManifest = {
   "fx_flow": "low",
   "fx_sleight": "low",
   "icon_sleight": "medium",
+  "fx_confusion": "low",
+  "fx_notice": "low",
+  "icon_ch3": "medium",
   "fx_eye": "low",
   "fx_bits": "medium"
  },
@@ -235,6 +238,10 @@ window.AssetManifest = {
    559,
    136
   ],
+  "ui/icon_confusion.webp": [
+   744,
+   749
+  ],
   "ui/icon_flow.webp": [
    374,
    382
@@ -242,6 +249,10 @@ window.AssetManifest = {
   "ui/icon_insight.webp": [
    372,
    381
+  ],
+  "ui/icon_notice.webp": [
+   744,
+   753
   ],
   "ui/icon_sleight.webp": [
    1008,
@@ -279,6 +290,10 @@ window.AssetManifest = {
    397,
    436
   ],
+  "fx/confusion.jpg": [
+   1600,
+   900
+  ],
   "fx/cutin.jpg": [
    1600,
    900
@@ -296,6 +311,10 @@ window.AssetManifest = {
    900
   ],
   "fx/insight.jpg": [
+   1600,
+   900
+  ],
+  "fx/notice.jpg": [
    1600,
    900
   ],

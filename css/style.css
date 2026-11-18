@@ -1124,6 +1124,8 @@ html.has-ui-dialog .scene-next { right: 2px; bottom: -4px; color: var(--gold); }
 html.has-ui-icon-insight .gauge-icon.skill-insight { background-image: url(../assets/ui/icon_insight.webp); box-shadow: none; }
 html.has-ui-icon-flow .gauge-icon.skill-flow { background-image: url(../assets/ui/icon_flow.webp); box-shadow: none; }
 html.has-ui-icon-sleight .gauge-icon.skill-sleight { background-image: url(../assets/ui/icon_sleight.webp); box-shadow: none; }
+html.has-ui-icon-confusion .gauge-icon.skill-confusion { background-image: url(../assets/ui/icon_confusion.webp); box-shadow: none; }
+html.has-ui-icon-notice .gauge-icon.skill-notice { background-image: url(../assets/ui/icon_notice.webp); box-shadow: none; }
 /* Sleight of Hand: the pond tiles that can be taken, and the hand tile being given away */
 .b-pond .tile.can { cursor: pointer; outline: 2px solid #e2b04a; outline-offset: 1px; border-radius: 3px; animation: pond-pick 1.1s ease-in-out infinite; }
 .b-pond .tile.can:hover { outline-color: #ff6a3d; filter: brightness(1.15); }
@@ -1169,6 +1171,7 @@ html.has-ui-gauge .gauge-bar i { position: absolute; left: 5.5%; top: 26%; width
 .intro-table td { vertical-align: middle; }
 .skill-cell { font-family: var(--sans); font-size: 12.5px; color: var(--gold); white-space: nowrap; }
 .skill-cell .gauge-icon { margin-right: 5px; vertical-align: -5px; }
+.skill-list .gauge-icon { margin-right: 6px; vertical-align: -5px; }
 .opening-note { color: #f1e2b8 !important; }
 .opening-note::before { content: '◆ '; color: var(--red-bright); }
 .intro-card { width: min(680px, 100%); }

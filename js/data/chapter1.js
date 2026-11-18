@@ -650,74 +650,13 @@
         'One more game. Sit down.',
         'もう一回戦だ。座れ。',
         '再来一场。坐下。') },
-      { hide: 'nangou' },
-      { show: 'thug', at: 'left', face: 'stunned' },
-      { who: 'thug', emo: 'worried', text: L(
-        'Boss… shouldn\'t we call Yagi?',
-        '兄貴……矢木さんを呼んだほうが……',
-        '大哥……要不要把矢木叫来……') },
-      { fx: 'shake' },
-      { show: 'ryuzaki', face: 'irritated' },
-      { text: L(
-        'Ryuzaki\'s hand cracked across the man\'s face.',
-        '竜崎の平手が、男の頬を打った。',
-        '龙崎一巴掌扇在了他脸上。') },
-      { who: 'ryuzaki', emo: 'irritated', text: L(
-        'Bring in a hired gun to beat one schoolboy? You want me laughed out of this town?',
-        'ガキ一人に代打ちだと？　俺をこの街の笑い者にする気か。',
-        '对付一个小鬼还要请代打？你想让我成为全城的笑柄吗？') },
-
-      /* ------------------------------------------------ the knock */
       { hide: 'all' },
       { text: L(
-        'The second game began. It had reached South 2 when—',
-        '二回戦が始まった。南二局まで進んだ、そのとき——',
-        '第二场开始了。打到南二局的时候——') },
-      { fx: 'thunder' },
-      { bg: 'doorway' },
-      { text: L(
-        'A knock at the door. Three sharp raps.',
-        '扉を叩く音。鋭く、三度。',
-        '有人敲门。短促的三声。') },
-      { show: 'yasuoka', at: 'right', face: 'wry' },
-      { who: 'yasuoka', emo: 'sly', text: L(
-        'Police. Sorry to interrupt your… social gathering.',
-        '警察だ。邪魔して悪いね、その……親睦会の最中に。',
-        '警察。抱歉打扰各位的……联谊会。') },
-      { who: 'yasuoka', emo: 'flat', face: 'neutral', text: L(
-        'I\'m looking for a boy.',
-        'ガキをひとり、探してる。',
-        '我在找一个少年。') },
-      { hide: 'all' },
-      { bg: 'pier' },
-      { who: 'yasuoka', emo: 'sly', text: L(
-        'There was a game of chicken down at the pier tonight. Two cars, one cliff, and whoever brakes first loses.',
-        '今夜、埠頭でチキンランがあってね。車が二台に、崖がひとつ。先にブレーキを踏んだほうが負けだ。',
-        '今晚码头那边有人玩胆小鬼赛车。两辆车，一道悬崖，谁先踩刹车谁就输。') },
-      { who: 'yasuoka', emo: 'amused', text: L(
-        'One of them never braked at all. The car went into the sea — and its driver swam away.',
-        '片方は、最後までブレーキを踏まなかった。車は海に落ちた——なのに運転してた奴は、泳いで消えちまった。',
-        '其中一个，自始至终都没踩刹车。车冲进了海里——开车的人却游走了。') },
-      { bg: 'doorway' },
-      { show: 'yasuoka', at: 'right', face: 'suspicious' },
-      { show: 'akagi', at: 'left', face: 'calm' },
-      { who: 'yasuoka', emo: 'sly', text: L(
-        'Funny thing. He would be just about that one\'s age.',
-        '妙な話でね。ちょうど、そこの坊やくらいの年頃なんだ。',
-        '说来也怪。年纪正好跟那边那位差不多。') },
-      { who: 'akagi', text: DOTS },
-      { text: L(
-        'The boy\'s eyes never left the tiles.',
-        '少年の目は、一度も牌から離れなかった。',
-        '少年的视线，始终没有离开那些牌。') },
-      { show: 'akagi', face: 'smirk' },
-      { text: L(
-        'But for the first time that night, the corner of his mouth lifted.',
-        'だがその夜はじめて、少年の口の端が、わずかに上がった。',
-        '但那一夜第一次，少年的嘴角微微扬了起来。') },
-      { hide: 'all' },
+        'The next hanchan began. Outside, the storm showed no sign of letting up.',
+        '次の半荘が始まった。外の嵐は、まだやむ気配がない。',
+        '下一个半庄开始了。窗外的暴风雨，丝毫没有停歇的意思。') },
       { bg: 'black' },
-      { card: L('To be continued', 'つづく', '未完待续'), sub: L('Chapter 2 · Sleight of Hand', '第二章・すり替え', '第二章·掉包') },
+      { card: L('To be continued', 'つづく', '未完待续'), sub: L('Chapter 2 · Deceive the Heavens', '第二章・瞞天過海', '第二章·瞒天过海') },
       { end: true, completed: true },
     ],
   };
